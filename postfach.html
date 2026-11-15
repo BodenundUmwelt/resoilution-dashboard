@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Postfach · ReSoilution GmbH</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#131814; --surface:#1b221d; --surface-2:#232c26; --surface-3:#2a342d;
+    --fg:#e7ede8; --muted:#9fada3; --line:#2e3a31; --line-strong:#3c4a40;
+    --accent:#6fc79c; --accent-ink:#0f1a14; --warn:#e0b25e;
+    --f-display:"Spectral",Georgia,serif; --f-body:"Source Sans 3",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--fg);margin:0}
+  body{font-family:var(--f-body);font-size:16px;line-height:1.55}
+  .wrap{max-width:1000px;margin:0 auto;padding:30px max(16px,env(safe-area-inset-left,0px)) 80px}
+  .top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
+  h1{font-family:var(--f-display);font-size:2rem;margin:0}
+  .lede{color:var(--muted);margin-top:6px;max-width:70ch}
+  a.back{color:var(--muted);text-decoration:none;font-size:.95rem}
+  a.back:hover{color:var(--accent)}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px}
+  select,input,button{font:inherit;color:inherit}
+  select,input{background:var(--surface-2);border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;min-height:42px}
+  input[type=search]{min-width:220px;flex:1}
+  button{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer;min-height:42px}
+  button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line-strong)}
+  .msg{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
+  .msg.unread{border-left:3px solid var(--accent)}
+  .msg .h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+  .msg .von{font-weight:600}
+  .msg .datum{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space:nowrap}
+  .msg .betreff{margin:4px 0 2px;font-family:var(--f-display);font-size:1.15rem}
+  .msg .vorschau{color:var(--muted);font-size:.95rem}
+  .msg .tags{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+  .tag{font-family:var(--f-mono);font-size:.72rem;border:1px solid var(--line-strong);border-radius:6px;padding:2px 8px;color:var(--muted)}
+  .tag a{color:var(--accent);text-decoration:none}
+  .note{color:var(--muted);padding:30px 6px;text-align:center}
+  .err{background:#3a1f1a;border:1px solid #e08a7a;color:var(--fg);border-radius:10px;padding:12px 16px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Postfach</h1><div class="lede">Mails aus den Microsoft-365-Postfaechern der ReSoilution GmbH. Lesen und Suchen im Eingang.</div></div>
+    <a class="back" href="index.html">&larr; zum Dashboard</a>
+  </div>
+  <div id="msgErr"></div>
+  <div class="bar">
+    <select id="mbox" aria-label="Postfach"></select>
+    <input id="q" type="search" placeholder="Im Postfach suchen ...">
+    <button id="searchBtn">Suchen</button>
+    <button id="reloadBtn" class="ghost">Eingang laden</button>
+  </div>
+  <div id="list"><div class="note">Postfach waehlen und Eingang laden.</div></div>
+</div>
+
+<script src="rs-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var cfg = window.RS_CONFIG || {};
+  var configured = cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && !/^HIER_/.test(cfg.SUPABASE_URL) && !/^HIER_/.test(cfg.SUPABASE_ANON_KEY);
+  if(!configured){ document.getElementById("msgErr").innerHTML = '<div class="err">Das Backend ist noch nicht verbunden. Bitte die Supabase-Zugangsdaten in rs-config.js eintragen.</div>'; return; }
+  var sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+
+  var $ = function(s){ return document.querySelector(s); };
+  var esc = function(v){ return String(v==null?"":v).replace(/[&<>"']/g, function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); };
+  var token = null;
+
+  function showErr(t){ $("#msgErr").innerHTML = t ? '<div class="err">'+esc(t)+'</div>' : ""; }
+
+  function fmt(d){ if(!d) return ""; var x = new Date(d); return isNaN(x) ? "" : x.toLocaleDateString("de-DE") + " " + x.toLocaleTimeString("de-DE", {hour:"2-digit",minute:"2-digit"}); }
+
+  async function api(pathWithQuery){
+    var r = await fetch(pathWithQuery, { headers: { Authorization: "Bearer " + token } });
+    var j = await r.json().catch(function(){ return {}; });
+    if(!r.ok) throw new Error(j.error || ("Fehler " + r.status));
+    return j;
+  }
+
+  function render(items){
+    var el = $("#list");
+    if(!items || !items.length){ el.innerHTML = '<div class="note">Keine Mails gefunden.</div>'; return; }
+    el.innerHTML = items.map(function(m){
+      return '<div class="msg' + (m.gelesen ? '' : ' unread') + '">' +
+        '<div class="h"><span class="von">' + esc(m.von || m.vonAdresse || "Unbekannt") + '</span><span class="datum">' + esc(fmt(m.datum)) + '</span></div>' +
+        '<div class="betreff">' + esc(m.betreff) + '</div>' +
+        '<div class="vorschau">' + esc((m.vorschau || "").slice(0, 240)) + '</div>' +
+        '<div class="tags">' + (m.gelesen ? '' : '<span class="tag">neu</span>') + (m.anhang ? '<span class="tag">Anhang</span>' : '') +
+        (m.link ? '<span class="tag"><a href="' + esc(m.link) + '" target="_blank" rel="noopener">in Outlook oeffnen</a></span>' : '') + '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  async function loadInbox(){
+    showErr(""); $("#list").innerHTML = '<div class="note">Laedt ...</div>';
+    try { var j = await api("/api/mail/messages?mailbox=" + encodeURIComponent($("#mbox").value) + "&top=25"); render(j.items); }
+    catch(e){ $("#list").innerHTML = ""; showErr(e.message); }
+  }
+  async function search(){
+    var q = $("#q").value.trim();
+    if(!q) return loadInbox();
+    showErr(""); $("#list").innerHTML = '<div class="note">Sucht ...</div>';
+    try { var j = await api("/api/mail/search?mailbox=" + encodeURIComponent($("#mbox").value) + "&q=" + encodeURIComponent(q) + "&top=25"); render(j.items); }
+    catch(e){ $("#list").innerHTML = ""; showErr(e.message); }
+  }
+
+  (async function init(){
+    var s = await sb.auth.getSession();
+    if(!(s.data && s.data.session)){ location.href = "index.html"; return; }
+    token = s.data.session.access_token;
+    try {
+      var st = await api("/api/mail/status");
+      $("#mbox").innerHTML = (st.mailboxes || []).map(function(m){ return '<option value="' + esc(m) + '">' + esc(m) + '</option>'; }).join("");
+      if(!st.configured){ showErr("Die Microsoft-365-Anbindung ist noch nicht eingerichtet. Siehe SETUP.md, Teil Azure."); }
+    } catch(e){ showErr(e.message); }
+    $("#reloadBtn").addEventListener("click", loadInbox);
+    $("#searchBtn").addEventListener("click", search);
+    $("#q").addEventListener("keydown", function(e){ if(e.key === "Enter") search(); });
+  })();
+})();
+</script>
+</body>
+</html>

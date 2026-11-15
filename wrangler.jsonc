@@ -1,0 +1,21 @@
+{
+  // Cloudflare-Worker-Konfiguration fuer das ReSoilution-Dashboard.
+  // Geheime Werte NICHT hier eintragen, sondern als Secrets im Cloudflare-Dashboard
+  // (Workers, Settings, Variables) bzw. per "wrangler secret put":
+  //   SUPABASE_SERVICE_ROLE   (der geheime service_role-Schluessel von Supabase)
+  //   AZURE_CLIENT_SECRET     (das Client-Secret der Azure-App)
+  "name": "resoilution-dashboard",
+  "main": "worker/index.js",
+  "compatibility_date": "2024-11-01",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    // oeffentliche Werte, duerfen hier stehen (nach dem Anlegen der Projekte eintragen):
+    "SUPABASE_URL": "https://njfzhthulwmuhdivqfvw.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_l42h6nWdJAvM0BzEBtV8NQ_id-ZVh_k",
+    "AZURE_TENANT_ID": "d35a7c4f-2e5f-427e-a0e5-d4a417722ab8",
+    "AZURE_CLIENT_ID": "fe7e68e9-f8b9-45a6-8612-f695d0664510"
+  }
+}

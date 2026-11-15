@@ -1,0 +1,1173 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><style>
+.fotoGrid{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.fotoItem{position:relative;width:96px;height:96px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.12);border:1px solid var(--line,#ddd)}
+.fotoItem img{width:100%;height:100%;object-fit:cover;display:block}
+.fotoDel{position:absolute;top:3px;right:3px;width:22px;height:22px;line-height:20px;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:15px;cursor:pointer}
+.fotoDrop{border:1.5px dashed var(--line,#ccc);border-radius:10px;padding:14px;margin:8px 0;text-align:center;transition:border-color .15s,background .15s}
+.fotoDrop.drag{border-color:var(--accent,#3a7)}
+.fotoDrop.busy{opacity:.55;pointer-events:none}
+.fotoDrop .fotoActions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
+.fotoDrop .linklike{color:var(--accent,#3a7);cursor:pointer;font-weight:600}
+</style>
+</head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>ReSoilution GmbH</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  /* Layout: Seitenleiste mit Bereichen (wie Projektmanagement Boden und Umwelt), rechts Arbeitsfläche mit Tabellen, Detail im Modal */
+  /* bewusst durchgehend dunkel, gleiche Welt wie das Untersuchungsprogramm */
+  :root{
+    --bg:#131814; --surface:#1b221d; --surface-2:#232c26; --surface-3:#2a342d;
+    --fg:#e7ede8; --muted:#9fada3; --line:#2e3a31; --line-strong:#3c4a40;
+    --accent:#6fc79c; --accent-ink:#0f1a14;
+    --warn:#e0b25e; --warn-soft:#33291a; --danger:#e08a7a; --danger-soft:#3a1f1a;
+    --s1:#6fc79c; --s1-soft:#1e3028; --s2:#d6a46a; --s2-soft:#322618;
+    --s3:#78b9cf; --s3-soft:#152a31; --s4:#bda0c7; --s4-soft:#271c2c;
+    --f-display:"Spectral",Georgia,serif;
+    --f-body:"Source Sans 3",system-ui,sans-serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--f-body);font-size:16px;line-height:1.55}
+  h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+  button,input,select,textarea{font:inherit;color:inherit}
+  .app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+  .side{background:var(--surface);border-right:1px solid var(--line);padding:26px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:18px;padding-left:max(12px,env(safe-area-inset-left,0px))}
+  .brand{padding:0 10px}
+  .brand .eb{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .brand h1{font-size:1.5rem;line-height:1.15;margin-top:4px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  nav a{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-radius:10px;font-size:1rem;color:var(--muted);text-decoration:none;font-weight:500}
+  nav a:hover{background:var(--surface-2);color:var(--fg)}
+  nav a.on{background:var(--s1-soft);color:var(--accent);font-weight:600}
+  nav a .cnt{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+  .side-foot{margin-top:auto;font-size:.84rem;color:var(--muted);padding:0 10px;display:flex;flex-direction:column;gap:6px}
+  .conn{display:inline-flex;align-items:center;gap:6px}
+  .conn i{width:8px;height:8px;border-radius:50%;background:var(--line-strong);display:inline-block}
+  .conn.ok i{background:var(--accent)} .conn.warn i{background:var(--warn)}
+  main{min-width:0;padding-block:36px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .inner{max-width:1400px;margin:0 auto;padding:0 32px}
+  .head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:30px}
+  .head h2{font-size:2.4rem;letter-spacing:-.01em;line-height:1.1}
+  .head .lede{color:var(--muted);margin-top:8px;max-width:75ch;font-size:1.02rem}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:12px 20px;font-size:1rem;font-weight:600;cursor:pointer;min-height:46px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line-strong)}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.sm{padding:7px 13px;font-size:.9rem;min-height:36px}
+  .btn.danger{background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.click:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:30px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--sc,var(--accent));border-radius:12px;padding:22px 24px;min-width:0}
+  .kpi .k{font-family:var(--f-mono);font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-family:var(--f-display);font-size:2.9rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.05;margin-top:6px}
+  .kpi .x{font-size:.9rem;color:var(--muted);margin-top:4px}
+  a.kpi.click:hover{border-color:var(--line-strong)}
+  .subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px;border-bottom:1px solid var(--line);padding-bottom:12px}
+  .subtab{padding:8px 14px;border-radius:999px;font-size:.92rem;font-weight:600;color:var(--muted);text-decoration:none;white-space:nowrap}
+  .subtab:hover{background:var(--surface-2);color:var(--fg)}
+  .subtab.on{background:var(--s1-soft);color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px 28px;min-width:0}
+  .panel h3{font-size:1.3rem;margin-bottom:14px}
+  .panel+.panel{margin-top:22px}
+  .grid2 .panel+.panel{margin-top:0}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  table.t{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+  .t th{background:var(--surface-2);font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:13px 18px;white-space:nowrap;border-bottom:1px solid var(--line-strong)}
+  .t td{padding:14px 18px;border-bottom:1px solid var(--line);vertical-align:top;font-size:.98rem}
+  .t tr:last-child td{border-bottom:0}
+  .t tr.click{cursor:pointer}
+  .t tr.click:hover td{background:var(--surface-2)}
+  .t .num{text-align:right;white-space:nowrap}
+  .mono{font-family:var(--f-mono);font-size:.9rem}
+  .sub{display:block;font-size:.85rem;color:var(--muted)}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:.82rem;font-weight:600;white-space:nowrap;background:var(--pc-soft,var(--surface-3));color:var(--pc,var(--muted))}
+  .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .p-s1{--pc:var(--s1);--pc-soft:var(--s1-soft)} .p-s2{--pc:var(--s2);--pc-soft:var(--s2-soft)} .p-s3{--pc:var(--s3);--pc-soft:var(--s3-soft)} .p-s4{--pc:var(--s4);--pc-soft:var(--s4-soft)} .p-warn{--pc:var(--warn);--pc-soft:var(--warn-soft)} .p-mute{--pc:var(--muted);--pc-soft:var(--surface-3)}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border:1px solid var(--line-strong);border-radius:6px;font-family:var(--f-mono);font-size:.74rem;color:var(--accent);background:var(--surface-2);cursor:pointer;margin:2px 4px 2px 0}
+  .chip:hover{border-color:var(--accent)}
+  .chip.plain{cursor:default;color:var(--muted)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+  .toolbar input,.toolbar select{background:var(--surface-2);border:1px solid var(--line-strong);border-radius:8px;padding:9px 12px;min-width:180px;min-height:42px}
+  .empty{padding:36px 16px;text-align:center;color:var(--muted)}
+  .empty b{display:block;font-family:var(--f-display);font-size:1.15rem;color:var(--fg);margin-bottom:4px}
+  .proj{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+  .pcard{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--sc,var(--accent));border-radius:14px;padding:22px 24px;cursor:pointer;min-width:0;text-align:left}
+  .pcard:hover{border-color:var(--line-strong)}
+  .pcard h3{font-size:1.35rem;margin:8px 0 6px}
+  .pcard p{margin:0;color:var(--muted);font-size:.98rem}
+  .pcard .row{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:.9rem;color:var(--muted)}
+  .sets{display:flex;flex-direction:column;gap:10px}
+  .set{border:1px solid var(--line);border-left:3px solid var(--sc,var(--accent));border-radius:10px;padding:12px 14px;background:var(--surface-2)}
+  .set .sh{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .set h4{margin:0;font-family:var(--f-display);font-size:1.15rem}
+  .set dl{margin:10px 0 8px;display:grid;grid-template-columns:140px 1fr;gap:6px 14px;font-size:.96rem}
+  .set dt{color:var(--muted);font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;padding-top:3px}
+  .set dd{margin:0}
+  .notes{display:flex;flex-direction:column;gap:8px}
+  .note{background:var(--surface-2);border-radius:8px;padding:10px 14px;font-size:.95rem}
+  .note .w{font-size:.74rem;color:var(--muted);margin-bottom:2px}
+  .addnote{display:flex;gap:8px;margin-top:8px}
+  .addnote textarea{flex:1;min-height:42px}
+  .ana-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .acard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;text-align:left;min-width:0}
+  .acard:hover{border-color:var(--accent)}
+  .acard code{font-family:var(--f-mono);color:var(--accent);font-size:.8rem}
+  .acard b{display:block;margin:2px 0}
+  .acard .sub{margin-top:4px}
+  .lab-tag{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.04em;color:var(--muted)}
+  .src{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+  .src.ok{color:var(--s1);border:1px solid var(--s1)} .src.tbd{color:var(--warn);border:1px solid var(--warn)}
+  .detail h4{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px}
+  .detail p{margin:0;max-width:70ch;white-space:pre-wrap}
+  .modal-bg{position:fixed;inset:0;background:rgba(5,8,6,.7);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:50}
+  .modal{background:var(--surface);border:1px solid var(--line-strong);border-radius:16px;padding:30px 32px;width:100%;max-width:920px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .modal .mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+  .modal .mh h3{font-size:1.7rem}
+  .xbtn{background:none;border:0;color:var(--muted);font-size:1.6rem;cursor:pointer;line-height:1;padding:2px 8px}
+  .t td.mono{white-space:nowrap}
+  .t td.mono .sub{font-family:var(--f-body);white-space:normal;min-width:170px;max-width:320px}
+  .form{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 20px}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .f.full{grid-column:1/-1}
+  .f label{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .f input,.f select,.f textarea,.addnote textarea,.inline input,.inline select{background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:11px 13px;width:100%;min-height:44px}
+  .f textarea{min-height:80px;resize:vertical}
+  .f small{color:var(--muted);font-size:.76rem}
+  .checks{display:flex;flex-wrap:wrap;gap:6px}
+  .checks label{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid var(--line-strong);border-radius:6px;font-family:var(--f-mono);font-size:.76rem;text-transform:none;letter-spacing:0;color:var(--fg);cursor:pointer}
+  .checks input{width:auto}
+  .mf{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .mf .left{margin-right:auto}
+  .inline{display:grid;grid-template-columns:1.2fr 1fr .7fr .6fr 1fr .9fr auto;gap:6px;align-items:end;margin-top:8px}
+  .inline.auf{grid-template-columns:1fr 2fr .9fr .9fr auto}
+  .warnbox{background:var(--warn-soft);border:1px solid var(--warn);color:var(--fg);border-radius:10px;padding:10px 14px;font-size:.88rem;margin-bottom:16px}
+  .infobox{background:var(--s1-soft);border:1px solid var(--line-strong);border-radius:10px;padding:10px 14px;font-size:.88rem;margin-bottom:16px;color:var(--fg)}
+  .ki-out{white-space:pre-wrap;background:var(--surface-2);border-radius:10px;padding:14px 16px;font-size:.92rem;min-height:60px}
+  .toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;z-index:80;font-size:.9rem}
+  .confirm{display:inline-flex;gap:6px;align-items:center;font-size:.85rem;color:var(--danger)}
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}
+    .side{position:sticky;top:env(safe-area-inset-top,0px);height:auto;flex-direction:column;gap:8px;padding:10px max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));z-index:20;border-right:0;border-bottom:1px solid var(--line)}
+    body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+    nav{flex-direction:row;overflow-x:auto;gap:4px}
+    nav a{white-space:nowrap;padding:7px 10px}
+    .side-foot{display:none}
+    .kpis{grid-template-columns:1fr 1fr}
+    .grid2,.proj{grid-template-columns:1fr}
+    .inner{padding:0}
+    main{padding-block:20px 80px}
+    .head h2{font-size:1.7rem}
+    .kpi .v{font-size:2rem}
+    .kpi{padding:16px 18px}
+    .panel{padding:16px 18px}
+    .inline,.inline.auf{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:560px){.form{grid-template-columns:1fr}.set dl{grid-template-columns:1fr}.modal{padding:16px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="eb">Dashboard</div><h1>ReSoilution GmbH</h1></div>
+    <nav id="nav">
+      <a href="#uebersicht" data-r="uebersicht">Übersicht</a>
+      <a href="#projekte" data-r="projekte">Projekte <span class="cnt" id="c-projekte"></span></a>
+      <a href="#kunden" data-r="kunden">Kunden <span class="cnt" id="c-kunden"></span></a>
+      <a href="#lieferanten" data-r="lieferanten">Lieferanten <span class="cnt" id="c-lieferanten"></span></a>
+      <a href="#produkte" data-r="produkte">Produkte <span class="cnt" id="c-produkte"></span></a>
+      <a href="#fdb" data-r="fdb">Forschungsdatenbank</a>
+      <a href="#assistent" data-r="assistent">Assistent</a>
+      <a href="#onboarding" data-r="onboarding">Onboarding</a>
+      <a href="postfach.html">Postfach</a>
+    </nav>
+    <div class="side-foot">
+      <span class="conn" id="conn"><i></i><span>Verbinde mit Datenbank …</span></span>
+      <span id="who"></span>
+    </div>
+  </aside>
+  <main><div class="inner" id="view"></div></main>
+</div>
+<div id="modalRoot"></div>
+
+<!-- Backend-Schicht ReSoilution GmbH: ersetzt die claude.ai-Artifact-Funktionen durch Supabase (Anmeldung, Daten, Dateien) -->
+<script src="rs-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="rs-shim.js"></script>
+
+<script>
+(function(){
+"use strict";
+// ---------- Grundlagen ----------
+const PROBEN_STATUS = [
+  ["eingegangen","p-s3"],["in Vorbereitung","p-s2"],["beim Labor","p-warn"],["Ergebnisse da","p-s1"],["ausgewertet","p-s4"],["archiviert","p-mute"]
+];
+const AUF_STATUS = [["geplant","p-mute"],["versandt","p-warn"],["Ergebnis da","p-s1"]];
+const PROJ_STATUS = [["in Planung","p-s3"],["laufend","p-s1"],["pausiert","p-mute"],["abgeschlossen","p-s4"]];
+const MATERIAL = ["Grundsubstrat","Zuschlagstoff","Mischung / Behandlungsvariante","Belastetes Material","Bodenprobe Feld","Ernteprobe","Bakterienprodukt","Kreislaufstoff","Sonstiges"];
+const SET_COLORS = ["s1","s2","s3","s4"];
+
+const TEAM_DEFAULT = ["Selina","Nadi","Paul","Vitus","Philipp","Harry","Sven"];
+const S = { projekte:[], proben:[], lieferanten:[], analysen:[], labore:[], auswertungen:[], notizen:[], kunden:[], produkte:[], ki:{regeln:""}, team:TEAM_DEFAULT.slice(),
+  meId:null, canWrite:null, readOnly:false, assets:null, sample:null, user:null, db:null,
+  loaded:{}, filter:{q:"",projekt:"",status:"",labor:""}, kFilter:{q:"",land:""}, pFilter:{q:""}, aFilter:{projekt:"",kategorie:""}, kiSel:{projekt:"",set:""}, kiBusy:false, kiText:"", kiCtl:null };
+
+const $ = s => document.querySelector(s);
+const esc = v => String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayISO = () => new Date().toISOString().slice(0,10);
+const fmtD = d => { if(!d) return "–"; const x = new Date(d.length===10? d+"T00:00:00": d); return isNaN(x)? esc(d) : x.toLocaleDateString("de-DE"); };
+const fmtDT = d => { const x = new Date(d); return isNaN(x)? "" : x.toLocaleDateString("de-DE")+" "+x.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); };
+const eur = v => (v==null||v==="")? "offen" : Number(v).toLocaleString("de-DE")+" €";
+const pill = (txt, list) => { const f = list.find(x=>x[0]===txt); return '<span class="pill '+(f?f[1]:"p-mute")+'">'+esc(txt||"–")+'</span>'; };
+const byId = (arr,id) => arr.find(x=>x.id===id);
+const proj = id => byId(S.projekte,id);
+const lab = id => byId(S.labore,id);
+const lief = id => byId(S.lieferanten,id);
+const liefName = p => { const l = p && p.lieferantId && lief(p.lieferantId); return l? l.name : (p && p.lieferant) || ""; };
+const ana = code => S.analysen.find(a=>a.code===code);
+const setOf = (p,setId) => p && (p.sets||[]).find(s=>s.id===setId);
+const uid = p => p + Math.random().toString(36).slice(2,9);
+const clone = o => JSON.parse(JSON.stringify(o||{}));
+let toastT;
+function toast(msg){ clearTimeout(toastT); let el=$("#toast"); if(!el){ el=document.createElement("div"); el.id="toast"; el.className="toast"; document.body.appendChild(el);} el.textContent=msg; el.hidden=false; toastT=setTimeout(()=>el.hidden=true,2600); }
+
+// Namen auflösen (nur ids gespeichert)
+let names = {};
+async function resolveNames(){
+  if(!S.user) return;
+  const ids = new Set();
+  S.proben.forEach(p=>{ if(p.erfasstVon) ids.add(p.erfasstVon); (p.notizen||[]).forEach(n=>n.who&&ids.add(n.who)); });
+  S.projekte.forEach(p=>(p.notizen||[]).forEach(n=>n.who&&ids.add(n.who)));
+  S.auswertungen.forEach(a=>a.who&&ids.add(a.who));
+  S.notizen.forEach(n=>n.who&&ids.add(n.who));
+  S.kunden.forEach(k=>(k.notizen||[]).forEach(n=>n.who&&ids.add(n.who)));
+  S.produkte.forEach(p=>(p.notizen||[]).forEach(n=>n.who&&ids.add(n.who)));
+  if(!ids.size) return;
+  try { const ps = await S.user.profiles([...ids]); let ch=false; for(const k in ps){ const n=ps[k].name||""; if(names[k]!==n){ names[k]=n; ch=true; } } if(ch) render(); } catch(e){}
+}
+const nameOf = id => id? (names[id] || "Teammitglied") : "–";
+
+// ---------- Datenbank ----------
+async function write(col, id, data){
+  if(!S.db){ toast("Keine Verbindung zur Datenbank."); throw new Error("no db"); }
+  try { await S.db.collection(col).doc(id).set(data); }
+  catch(e){
+    if(e && e.code==="invalid_argument" && S.canWrite===null){ S.readOnly=true; render(); toast("Du kannst hier nur lesen."); }
+    else if(e && e.code==="quota_exceeded") toast("Speicher der Datenbank ist voll.");
+    else toast("Speichern fehlgeschlagen ("+(e&&e.code||"Fehler")+").");
+    throw e;
+  }
+}
+async function remove(col,id){ try { await S.db.collection(col).doc(id).delete(); } catch(e){ toast("Löschen fehlgeschlagen."); throw e; } }
+const canW = () => S.db && !S.readOnly && S.canWrite!==false;
+
+function subscribe(col, key, map){
+  S.db.collection(col).onSnapshot(snap => {
+    S[key] = snap.docs.map(d => ({ id:d.id, ...clone(d.data()) }));
+    if(map) map();
+    if(!snap.metadata.fromCache) S.loaded[key]=true;
+    updateConn(); render(); resolveNames();
+  }, err => { S.loaded[key]="error"; updateConn(); render(); });
+}
+function updateConn(){
+  const el=$("#conn"); if(!el) return;
+  const keys=["projekte","proben","analysen","labore"];
+  if(!S.db){ el.className="conn warn"; el.lastChild.textContent= S.dbTried? "Datenbank nicht erreichbar" : "Verbinde mit Datenbank …"; return; }
+  if(keys.some(k=>S.loaded[k]==="error")){ el.className="conn warn"; el.lastChild.textContent="Verbindung gestört"; return; }
+  if(keys.every(k=>S.loaded[k])){ el.className="conn ok"; el.lastChild.textContent = S.readOnly||S.canWrite===false ? "Verbunden · nur lesen" : "Verbunden · gemeinsamer Datenstand"; }
+  else { el.className="conn"; el.lastChild.textContent="Lade Daten …"; }
+}
+
+async function boot(){
+  render();
+  const slow = setTimeout(()=>{ S.slow=true; render(); }, 10000);
+  try {
+    const [db,user,assets,sample] = await Promise.all(["db","user","assets","sample"].map(n=>window.claude&&window.claude.use? window.claude.use(n).catch(()=>null) : Promise.resolve(null)));
+    S.db=db; S.user=user; S.assets=assets; S.sample=sample; S.dbTried=true;
+    if(user){ try{ S.meId=await user.id(); }catch(e){} try{ S.canWrite=await user.can("data.write"); }catch(e){} try{ const me=await user.me(); $("#who").textContent = me.name? "Angemeldet als "+me.name : ""; }catch(e){} }
+    if(db){
+      subscribe("projekte","projekte");
+      subscribe("proben","proben");
+      subscribe("lieferanten","lieferanten");
+      subscribe("analysen","analysen");
+      subscribe("labore","labore");
+      subscribe("auswertungen","auswertungen");
+      subscribe("notizen","notizen");
+      subscribe("kunden","kunden");
+      subscribe("produkte","produkte");
+      db.collection("einstellungen").onSnapshot(snap=>{ const d=snap.docs.find(x=>x.id==="ki"); S.ki = d? clone(d.data()) : {regeln:""}; const t=snap.docs.find(x=>x.id==="team"); const tm=t&&t.data().mitglieder; S.team = Array.isArray(tm)&&tm.length? tm.slice() : TEAM_DEFAULT.slice(); S.loaded.ki=true; render(); }, ()=>{});
+    }
+    clearTimeout(slow); S.slow=false;
+  } catch(e){ clearTimeout(slow); }
+  updateConn(); render();
+}
+
+// ---------- Routing ----------
+const ROUTES = ["uebersicht","projekte","kunden","lieferanten","produkte","fdb","proben","analysen","labore","auswertung","assistent","onboarding"];
+const route = () => { const h=(location.hash||"").slice(1); return ROUTES.includes(h)? h : "uebersicht"; };
+window.addEventListener("hashchange", ()=>{ render(); window.scrollTo(0,0); });
+document.addEventListener("change", e=>{
+  const cb = e.target.closest && e.target.closest(".ob-task input[type=checkbox]");
+  if(!cb) return;
+  try{ cb.checked ? localStorage.setItem("rs-onboarding-"+cb.dataset.k,"1") : localStorage.removeItem("rs-onboarding-"+cb.dataset.k); }catch(_){}
+  const t=cb.closest(".ob-task"); if(t) t.classList.toggle("done", cb.checked);
+});
+
+const FDB_GROUP = ["fdb","proben","analysen","labore","auswertung"];
+function render(){
+  const r = route();
+  const activeNav = FDB_GROUP.includes(r)? "fdb" : r;
+  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on", a.dataset.r===activeNav));
+  const cnt = {projekte:S.projekte.length, kunden:S.kunden.length, lieferanten:S.lieferanten.length, produkte:S.produkte.length};
+  for(const k in cnt){ const el=$("#c-"+k); if(el) el.textContent = cnt[k]||""; }
+  const v=$("#view");
+  const ae=document.activeElement; const keep = ae && ae.id && v.contains(ae) ? {id:ae.id, pos: (()=>{try{return ae.selectionStart}catch(e){return null}})()} : null;
+  const view = ({uebersicht:vUebersicht, projekte:vProjekte, proben:vProben, lieferanten:vLieferanten, analysen:vAnalysen, labore:vLabore, auswertung:vAuswertung, assistent:vAssistent, kunden:vKunden, produkte:vProdukte, fdb:vFdb, onboarding:vOnboarding}[r])();
+  v.innerHTML = banner() + (FDB_GROUP.includes(r)? fdbSubnav(r) : "") + view;
+  if(keep){ const el=document.getElementById(keep.id); if(el){ el.focus(); if(keep.pos!=null) try{el.setSelectionRange(keep.pos,keep.pos)}catch(e){} } }
+}
+function banner(){
+  if(S.dbTried && !S.db) return '<div class="warnbox">Die gemeinsame Datenbank ist in dieser Ansicht nicht verfügbar. Bitte im Claude-Viewer angemeldet öffnen. Ohne Datenbank lassen sich keine Proben erfassen.</div>';
+  if(S.slow && !S.loaded.proben) return '<div class="warnbox">Die Datenbank antwortet noch nicht. Die Anzeige aktualisiert sich, sobald die Daten da sind.</div>';
+  if(S.readOnly || S.canWrite===false) return '<div class="infobox">Du hast Lesezugriff. Für das Erfassen von Proben und Ergebnissen braucht es mindestens die Freigabe „Contributor“, für Prüfbericht-Uploads „Editor“.</div>';
+  return "";
+}
+
+// ---------- Ansicht: Onboarding ----------
+function vOnboarding(){
+  const task = (k, html) => {
+    let on=false; try{ on = localStorage.getItem("rs-onboarding-"+k)==="1"; }catch(_){}
+    return '<label class="ob-task'+(on?' done':'')+'"><input type="checkbox" data-k="'+k+'"'+(on?' checked':'')+'><span>'+html+'</span></label>';
+  };
+  const A='https://claude.ai/artifact/';
+  return `
+  <style>
+   .ob-callout{background:var(--s2-soft);border:1px solid var(--line);border-left:4px solid var(--s2);border-radius:12px;padding:15px 18px;margin-bottom:24px}
+   .ob-callout b{color:var(--s2)}
+   .ob-callout p{margin:5px 0 0;color:var(--fg);font-size:.95rem}
+   .ob-phead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+   .ob-k{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--s1);font-weight:700}
+   .ob-panel h3{margin:3px 0 0;font-size:1.1rem}
+   .ob-pill{font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:999px;background:var(--s1-soft);color:var(--s1);white-space:nowrap}
+   .ob-lead{color:var(--muted);font-size:.92rem;margin:8px 0 0}
+   .ob-row{display:flex;gap:10px;font-size:.9rem;padding:7px 0;border-top:1px solid var(--line)}
+   .ob-row:first-of-type{border-top:0;margin-top:8px}
+   .ob-row b{min-width:70px;flex:none;color:var(--fg)}
+   .ob-row span{color:var(--muted);min-width:0}
+   .ob-open{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:.86rem;color:var(--muted)}
+   .ob-open b{color:var(--s2)}
+   .ob-tasks{display:flex;flex-direction:column;gap:2px;margin-top:10px}
+   .ob-task{display:flex;gap:12px;align-items:flex-start;padding:9px 8px;border-radius:9px;cursor:pointer}
+   .ob-task:hover{background:var(--surface-2)}
+   .ob-task input{appearance:none;-webkit-appearance:none;flex:none;width:20px;height:20px;margin:1px 0 0;border:2px solid var(--line-strong);border-radius:6px;background:var(--surface-2);cursor:pointer;position:relative}
+   .ob-task input:checked{background:var(--s1);border-color:var(--s1)}
+   .ob-task input:checked::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:var(--bg);font-size:13px;font-weight:700}
+   .ob-task input:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+   .ob-task span{font-size:.92rem;color:var(--fg)}
+   .ob-task.done span{color:var(--muted);text-decoration:line-through}
+   .ob-task a{color:var(--s1);font-weight:600;text-decoration:none}
+   .ob-task a:hover{text-decoration:underline}
+  </style>
+  <div class="head"><div><h2>Onboarding</h2><div class="lede">Schritt für Schritt in die wissenschaftliche Leitung von reSoilution. Hak ab, was erledigt ist. Die Haken bleiben in deinem Browser gespeichert.</div></div></div>
+  <div class="ob-callout"><b>Zuerst die Zugänge</b><p>Bevor es inhaltlich losgeht, brauchst du den Login für das Gutachtensystem, die Freigabe für die Forschungsdatenbank und die Freigabe für die Übersicht der Untersuchungen. Diese drei Punkte stehen in Phase 1.</p></div>
+
+  <div class="grid2">
+    <div class="panel ob-panel">
+      <div class="ob-phead"><div class="ob-k">Laufende Forschung</div><span class="ob-pill">aktiv</span></div>
+      <h3>Wasserkapazität, Schritt 3</h3>
+      <p class="ob-lead">Das aktuelle Projekt verbessert die Wasserkapazität von Rasentragschicht- und Baumsubstraten. Schritt 3 screent die Behandlungsvarianten mit Diatomit und Zeolith zu 5, 10 und 15 Prozent und Bakterien zu 1, 5 und 10 Gramm je Kilogramm.</p>
+      <div class="ob-open"><b>Noch offen</b> → die Dosierungsbasis (Masse oder Volumen) und die Wiederholungen je Variante. Erst damit steht die Probenzahl.</div>
+    </div>
+    <div class="panel ob-panel">
+      <div class="ob-phead"><div class="ob-k">Menschen und Labore</div></div>
+      <h3>Wer dir zuarbeitet</h3>
+      <div class="ob-row"><b>Sven</b><span>SolvaTerra GmbH, funktionale Mikrobiologie, liefert die Bakterien</span></div>
+      <div class="ob-row"><b>Labore</b><span>Agrolab, Eurofins, BoPHYS und SolvaTerra</span></div>
+      <div class="ob-row"><b>Team</b><span>Selina, Paul und Vitus bei Boden und Umwelt</span></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:22px">
+    <div class="panel ob-panel">
+      <div class="ob-phead"><div class="ob-k">Phase 1</div><span class="ob-pill">Tag 1</span></div>
+      <h3>Ankommen und Zugänge</h3>
+      <div class="ob-tasks">
+        ${task('p1a','Die <a href="'+A+'12pX36jEA4J4kePfYEJwo7" target="_blank" rel="noopener">Perspektiven-Übersicht</a> lesen')}
+        ${task('p1b','Login für das Gutachtensystem von Selina bekommen und einloggen')}
+        ${task('p1c','Freigabe für Forschungsdatenbank und Untersuchungs-Übersicht erhalten')}
+        ${task('p1d','reSoilution-E-Mail-Adresse einrichten lassen')}
+        ${task('p1e','Dieses Onboarding als roten Faden nehmen')}
+      </div>
+    </div>
+    <div class="panel ob-panel">
+      <div class="ob-phead"><div class="ob-k">Phase 2</div><span class="ob-pill">Woche 1</span></div>
+      <h3>Überblick verschaffen</h3>
+      <div class="ob-tasks">
+        ${task('p2a','Die <a href="#fdb">Forschungsdatenbank</a> durchgehen: Proben, Projekte und Lieferanten')}
+        ${task('p2b','Verstehen, wie jede Probe einem Projekt und einem Lieferanten zugeordnet ist')}
+        ${task('p2c','Das <a href="'+A+'T7omcHMbnEfGsZnh6MVWKc" target="_blank" rel="noopener">Untersuchungsprogramm</a> lesen, Steps 1 bis 4')}
+        ${task('p2d','Die Wasserkapazitäts-Forschung in Schritt 3 im Detail nachvollziehen')}
+        ${task('p2e','Labore und Ansprechpartner kennenlernen, besonders Sven')}
+      </div>
+    </div>
+    <div class="panel ob-panel">
+      <div class="ob-phead"><div class="ob-k">Phase 3</div><span class="ob-pill">Woche 2 bis 4</span></div>
+      <h3>Forschung übernehmen</h3>
+      <div class="ob-tasks">
+        ${task('p3a','Offene Entscheidungen in Schritt 3 treffen: Dosierungsbasis und Wiederholungen')}
+        ${task('p3b','Die genaue Probenzahl ableiten und die Proben planen')}
+        ${task('p3c','Analysen beauftragen und Ergebnisse in der Forschungsdatenbank dokumentieren')}
+        ${task('p3d','Den Probenüberblick aufbauen: wann, wo und wie viele Proben mit welchem Ergebnis')}
+        ${task('p3e','Lieferanten und Forschungsgelder in den Überblick nehmen')}
+      </div>
+    </div>
+    <div class="panel ob-panel">
+      <div class="ob-phead"><div class="ob-k">Phase 4</div><span class="ob-pill">ab Monat 2</span></div>
+      <h3>Ausbauen und mitgestalten</h3>
+      <div class="ob-tasks">
+        ${task('p4a','CE-Kennzeichnung starten: PFC- und CMC-Einordnung für Diatomit und Zeolith (Anhang I und II)')}
+        ${task('p4b','Je Produkt entscheiden: nationaler Weg (DüMV 2012) oder EU-Weg mit CE')}
+        ${task('p4c','Methodik und Qualitätssicherung vereinheitlichen')}
+        ${task('p4d','Erste Fördermöglichkeiten und Veröffentlichungen sichten')}
+        ${task('p4e','In ruhigen Phasen bei Boden und Umwelt reinschnuppern, etwa ins Biotop-Monitoring')}
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+// ---------- Ansicht: Übersicht ----------
+function vUebersicht(){
+  const pr = S.proben;
+  const aktiv = S.projekte.filter(p=>p.status==="laufend").length;
+  const beimLabor = []; pr.forEach(p=>(p.auftraege||[]).forEach(a=>{ if(a.status==="versandt") beimLabor.push({p,a}); }));
+  const ergebnisDa = pr.filter(p=>p.status==="Ergebnisse da").length;
+  const neu = pr.filter(p=>p.status==="eingegangen"||p.status==="in Vorbereitung");
+  const recent = pr.slice().sort((a,b)=>(b.eingang||"").localeCompare(a.eingang||"")||(b.nr||"").localeCompare(a.nr||"")).slice(0,8);
+  let h = '<div class="head"><div><h2>Übersicht</h2><div class="lede">Laufende Untersuchungen, Proben im Labor und was als Nächstes ansteht.</div></div></div>';
+  h += '<div class="kpis">'
+    + kpi("Projekte laufend", aktiv, S.projekte.length+" Projekte gesamt","var(--s1)","#projekte")
+    + kpi("Proben im Lager", neu.length, "eingegangen oder in Vorbereitung","var(--s3)","#proben","")
+    + kpi("Aufträge beim Labor", beimLabor.length, "versandt, Ergebnis ausstehend","var(--warn)","#proben","beim Labor")
+    + kpi("Ergebnisse auszuwerten", ergebnisDa, "Status „Ergebnisse da“","var(--s4)","#auswertung")
+    + '</div>';
+  h += '<div class="grid2"><div class="panel"><h3>Beim Labor</h3>';
+  if(!beimLabor.length) h += '<div class="empty">Keine Aufträge unterwegs. Aufträge legst du in der Probe unter „Laboraufträge“ an.</div>';
+  else { h += '<div class="tw"><table class="t"><thead><tr><th>Probe</th><th>Labor</th><th>Versandt</th><th>Analysen</th></tr></thead><tbody>';
+    beimLabor.sort((x,y)=>(x.a.versand||"").localeCompare(y.a.versand||"")).forEach(({p,a})=>{ const l=lab(a.labor); h+='<tr class="click" data-probe="'+esc(p.id)+'" tabindex="0"><td class="mono">'+esc(p.nr)+'<span class="sub">'+esc(p.bezeichnung)+'</span></td><td>'+esc(l?l.name:"–")+'</td><td>'+fmtD(a.versand)+'</td><td>'+(a.analysen||[]).map(c=>'<span class="chip plain">'+esc(c)+'</span>').join("")+'</td></tr>'; });
+    h += '</tbody></table></div>'; }
+  h += '</div><div class="panel"><h3>Zuletzt eingegangen</h3>';
+  if(!recent.length) h += '<div class="empty"><b>Noch keine Proben</b>Erfasse die erste Lieferantenprobe über „Probe erfassen“.</div>';
+  else { h += '<div class="tw"><table class="t"><thead><tr><th>Probe</th><th>Projekt</th><th>Eingang</th><th>Status</th></tr></thead><tbody>';
+    recent.forEach(p=>{ const pj=proj(p.projektId); h+='<tr class="click" data-probe="'+esc(p.id)+'" tabindex="0"><td class="mono">'+esc(p.nr)+'<span class="sub">'+esc(p.bezeichnung)+'</span></td><td>'+esc(pj?pj.kurz||pj.titel:"–")+'</td><td>'+fmtD(p.eingang)+'</td><td>'+pill(p.status,PROBEN_STATUS)+'</td></tr>'; });
+    h += '</tbody></table></div>'; }
+  h += '</div></div>';
+  return h;
+}
+const kpi = (k,v,x,c,href,navstatus) => '<a class="kpi click" style="--sc:'+c+';cursor:pointer;text-decoration:none;color:inherit;display:block"'+(href?' href="'+href+'" data-kpi':'')+(navstatus!==undefined?' data-navstatus="'+esc(navstatus)+'"':'')+'><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="x">'+x+'</div></a>';
+
+// ---------- Ansicht: Projekte ----------
+function vProjekte(){
+  let h = '<div class="head"><div><h2>Projekte</h2><div class="lede">Jedes Projekt bündelt Forschungsfragen, Analysesets und die zugehörigen Proben.</div></div><div class="actions">'+(canW()?'<button class="btn" data-act="newProjekt">Projekt anlegen</button>':'')+'</div></div>';
+  if(!S.projekte.length) return h + '<div class="panel empty"><b>Noch keine Projekte</b>'+(S.loaded.projekte? 'Lege ein Projekt an oder lass die vier Fragestellungen aus dem Untersuchungsprogramm einspielen.' : 'Daten werden geladen …')+'</div>';
+  h += '<div class="proj">';
+  S.projekte.slice().sort((a,b)=>(a.nr||"").localeCompare(b.nr||"")).forEach((p,i)=>{
+    const n = S.proben.filter(x=>x.projektId===p.id).length;
+    h += '<button class="pcard" style="--sc:var(--'+SET_COLORS[i%4]+')" data-projekt="'+esc(p.id)+'"><span class="mono" style="color:var(--muted)">'+esc(p.nr)+'</span> '+pill(p.status,PROJ_STATUS)+'<h3>'+esc(p.titel)+'</h3><p>'+esc((p.forschungsfragen||"").slice(0,180))+((p.forschungsfragen||"").length>180?" …":"")+'</p><div class="row"><span>'+(p.sets||[]).length+' Analysesets</span><span>'+n+' Proben</span></div></button>';
+  });
+  return h + '</div>';
+}
+
+function showProjekt(id){
+  const p = proj(id); if(!p) return;
+  const proben = S.proben.filter(x=>x.projektId===id).sort((a,b)=>(a.nr||"").localeCompare(b.nr||""));
+  let h = '<div class="mh"><div><span class="mono" style="color:var(--muted)">'+esc(p.nr)+'</span> '+pill(p.status,PROJ_STATUS)+'<h3>'+esc(p.titel)+'</h3></div><button class="xbtn" data-close aria-label="Schließen">×</button></div><div class="detail">';
+  h += '<h4>Forschungsfragen</h4><p>'+esc(p.forschungsfragen||"noch nicht beschrieben")+'</p>';
+  h += '<h4>Erwartete Ergebnisse</h4><p>'+esc(p.erwartung||"noch nicht beschrieben")+'</p>';
+  if(p.verantwortung) h += '<h4>Verantwortung</h4><p>'+esc(p.verantwortung)+'</p>';
+  h += '</div><h4 style="font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px">Analysesets</h4><div class="sets">';
+  (p.sets||[]).forEach((s,i)=>{
+    const cost = (s.analysen||[]).reduce((sum,c)=>{ const a=ana(c); return a&&a.preis!=null&&a.preis!==""? sum+Number(a.preis) : sum; },0);
+    const open = (s.analysen||[]).filter(c=>{ const a=ana(c); return !a||a.preis==null||a.preis===""; });
+    const nP = proben.filter(x=>x.setId===s.id).length;
+    h += '<div class="set" style="--sc:var(--'+SET_COLORS[i%4]+')"><div class="sh"><h4>'+esc(s.name)+'</h4><span class="sub">'+nP+' Proben · '+eur(cost)+' je Probe'+(open.length?' + '+open.length+' Preise offen':'')+'</span></div><dl><dt>Forschungsfrage</dt><dd>'+esc(s.frage||"–")+'</dd><dt>Erwartung</dt><dd>'+esc(s.erwartung||"–")+'</dd><dt>Analysen</dt><dd>'+(s.analysen||[]).map(c=>'<span class="chip" data-ana="'+esc(c)+'" tabindex="0">'+esc(c)+'</span>').join("")+'</dd></dl>'+(canW()?'<button class="btn ghost sm" data-editset="'+esc(s.id)+'" data-pid="'+esc(p.id)+'">Set bearbeiten</button>':'')+'</div>';
+  });
+  if(!(p.sets||[]).length) h += '<div class="empty">Noch keine Analysesets.</div>';
+  h += '</div>';
+  if(canW()) h += '<div style="margin-top:10px"><button class="btn ghost sm" data-editset="" data-pid="'+esc(p.id)+'">Analyseset hinzufügen</button></div>';
+  h += '<h4 style="font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px">Proben ('+proben.length+')</h4>';
+  if(proben.length){ h += '<div class="tw"><table class="t"><thead><tr><th>Probe</th><th>Set</th><th>Eingang</th><th>Status</th></tr></thead><tbody>';
+    proben.forEach(x=>{ const s=setOf(p,x.setId); h+='<tr class="click" data-probe="'+esc(x.id)+'" tabindex="0"><td class="mono">'+esc(x.nr)+'<span class="sub">'+esc(x.bezeichnung)+(x.variante?' · '+esc(x.variante):'')+'</span></td><td>'+esc(s?s.name:"–")+'</td><td>'+fmtD(x.eingang)+'</td><td>'+pill(x.status,PROBEN_STATUS)+'</td></tr>'; });
+    h += '</tbody></table></div>'; }
+  else h += '<div class="empty">Diesem Projekt sind noch keine Proben zugeordnet.</div>';
+  h += notesBlock("projekte", p);
+  h += '<div class="mf">'+(canW()?'<button class="btn ghost" data-editprojekt="'+esc(p.id)+'">Projekt bearbeiten</button>':'')+'<button class="btn" data-close>Schließen</button></div>';
+  openModal(h, ()=>showProjekt(id));
+}
+
+function editProjekt(id){
+  const p = id? clone(proj(id)) : {nr:"F-"+String(S.projekte.length+1).padStart(2,"0"), status:"in Planung", sets:[], notizen:[]};
+  let h = '<div class="mh"><h3>'+(id?"Projekt bearbeiten":"Projekt anlegen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fProj" class="form">'
+   + fld("nr","Projektnummer",p.nr) + sel("status","Status",PROJ_STATUS.map(x=>x[0]),p.status)
+   + fld("titel","Titel",p.titel,"full",true) + fld("kurz","Kurzname (für Listen)",p.kurz)
+   + fld("verantwortung","Verantwortung",p.verantwortung)
+   + area("forschungsfragen","Forschungsfragen",p.forschungsfragen) + area("erwartung","Erwartete Ergebnisse",p.erwartung)
+   + '</form><div class="mf">'+(id?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Projekt löschen</button></span>':'')+'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveProj">Speichern</button></div>';
+  openModal(h);
+  $("#saveProj").onclick = async ()=>{
+    const f = formData("#fProj"); if(!f.titel){ toast("Bitte einen Titel angeben."); return; }
+    Object.assign(p,f); delete p.id;
+    const docId = id || S.db.collection("projekte").doc().id;
+    await write("projekte", docId, p); closeModal(); toast("Projekt gespeichert"); if(id) showProjekt(id);
+  };
+  wireDelete(async()=>{ if(S.proben.some(x=>x.projektId===id)){ toast("Dem Projekt sind noch Proben zugeordnet."); return; } await remove("projekte",id); closeModal(); toast("Projekt gelöscht"); });
+}
+
+function editSet(pid, setId){
+  const p = clone(proj(pid)); if(!p) return; p.sets = p.sets||[];
+  const s = setId? p.sets.find(x=>x.id===setId) : {id:uid("s"), name:"", frage:"", erwartung:"", analysen:[]};
+  const codes = S.analysen.slice().sort((a,b)=>a.code.localeCompare(b.code));
+  let h = '<div class="mh"><h3>'+(setId?"Analyseset bearbeiten":"Analyseset hinzufügen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fSet" class="form">'
+    + fld("name","Bezeichnung (z.B. Step 3 — Behandlungsvarianten)",s.name,"full",true)
+    + area("frage","Forschungsfrage dieses Sets",s.frage) + area("erwartung","Was wir von den Ergebnissen erwarten",s.erwartung)
+    + '<div class="f full"><label>Analysen</label><div class="checks">'+codes.map(a=>'<label><input type="checkbox" name="an" value="'+esc(a.code)+'" '+((s.analysen||[]).includes(a.code)?"checked":"")+'>'+esc(a.code)+'</label>').join("")+'</div></div>'
+    + '</form><div class="mf">'+(setId?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Set löschen</button></span>':'')+'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveSet">Speichern</button></div>';
+  openModal(h);
+  $("#saveSet").onclick = async ()=>{
+    const f = formData("#fSet"); if(!f.name){ toast("Bitte eine Bezeichnung angeben."); return; }
+    s.name=f.name; s.frage=f.frage; s.erwartung=f.erwartung; s.analysen=[...document.querySelectorAll('#fSet input[name=an]:checked')].map(x=>x.value);
+    if(!setId) p.sets.push(s);
+    const id=p.id; delete p.id; await write("projekte", id, p); toast("Set gespeichert"); showProjekt(id);
+  };
+  wireDelete(async()=>{ if(S.proben.some(x=>x.setId===setId)){ toast("Dem Set sind noch Proben zugeordnet."); return; } p.sets=p.sets.filter(x=>x.id!==setId); const id=p.id; delete p.id; await write("projekte",id,p); toast("Set gelöscht"); showProjekt(id); });
+}
+
+// ---------- Ansicht: Proben ----------
+function filteredProben(){
+  const f=S.filter, q=f.q.trim().toLowerCase();
+  return S.proben.filter(p=>{
+    if(f.projekt && p.projektId!==f.projekt) return false;
+    if(f.status && p.status!==f.status) return false;
+    if(f.labor && !(p.auftraege||[]).some(a=>a.labor===f.labor)) return false;
+    if(q && ![p.nr,p.bezeichnung,liefName(p),p.variante,p.lagerort,p.material].join(" ").toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>(b.nr||"").localeCompare(a.nr||""));
+}
+function vProben(){
+  let h = '<div class="head"><div><h2>Proben</h2><div class="lede">Alle Proben mit Herkunft, Projektzuordnung, Lagerort, Laboraufträgen und Ergebnissen.</div></div><div class="actions">'+(canW()?'<button class="btn" data-act="newProbe">Probe erfassen</button>':'')+'</div></div>';
+  h += '<div class="toolbar"><input id="fq" type="search" placeholder="Suche Nr., Bezeichnung, Lieferant …" value="'+esc(S.filter.q)+'" aria-label="Suche">'
+    + '<select id="fprojekt" aria-label="Projekt"><option value="">Alle Projekte</option>'+S.projekte.map(p=>'<option value="'+esc(p.id)+'" '+(S.filter.projekt===p.id?"selected":"")+'>'+esc(p.kurz||p.titel)+'</option>').join("")+'</select>'
+    + '<select id="fstatus" aria-label="Status"><option value="">Alle Status</option>'+PROBEN_STATUS.map(s=>'<option '+(S.filter.status===s[0]?"selected":"")+'>'+s[0]+'</option>').join("")+'</select>'
+    + '<select id="flabor" aria-label="Labor"><option value="">Alle Labore</option>'+S.labore.map(l=>'<option value="'+esc(l.id)+'" '+(S.filter.labor===l.id?"selected":"")+'>'+esc(l.name)+'</option>').join("")+'</select></div>';
+  const list = filteredProben();
+  if(!S.proben.length) return h + '<div class="panel empty"><b>Noch keine Proben erfasst</b>'+(S.loaded.proben?'Wenn eine Lieferung eingeht, über „Probe erfassen“ anlegen und einem Projekt und Analyseset zuordnen.':'Daten werden geladen …')+'</div>';
+  if(!list.length) return h + '<div class="panel empty">Keine Probe passt zu den Filtern.</div>';
+  h += '<div class="tw"><table class="t"><thead><tr><th>Probe</th><th>Lieferant</th><th>Projekt / Set</th><th>Eingang</th><th>Lagerort</th><th>Labore</th><th>Status</th></tr></thead><tbody>';
+  list.forEach(p=>{ const pj=proj(p.projektId), s=setOf(pj,p.setId);
+    const labs=[...new Set((p.auftraege||[]).map(a=>{const l=lab(a.labor);return l?l.kurz||l.name:"";}).filter(Boolean))];
+    h += '<tr class="click" data-probe="'+esc(p.id)+'" tabindex="0"><td class="mono">'+esc(p.nr)+'<span class="sub" style="font-family:var(--f-body)">'+esc(p.bezeichnung)+(p.variante?' · '+esc(p.variante):'')+'</span></td><td>'+esc(liefName(p)||"–")+'</td><td>'+esc(pj?pj.kurz||pj.titel:"–")+'<span class="sub">'+esc(s?s.name:"")+'</span></td><td>'+fmtD(p.eingang)+'</td><td>'+esc(p.lagerort||"–")+'</td><td>'+esc(labs.join(", ")||"–")+'</td><td>'+pill(p.status,PROBEN_STATUS)+'</td></tr>'; });
+  return h + '</tbody></table></div>';
+}
+
+function nextNr(){
+  const y = new Date().getFullYear(); const pre="RS-"+y+"-";
+  const max = S.proben.map(p=>p.nr||"").filter(n=>n.startsWith(pre)).map(n=>parseInt(n.slice(pre.length),10)||0).reduce((a,b)=>Math.max(a,b),0);
+  return pre+String(max+1).padStart(4,"0");
+}
+
+function editProbe(id, preset){
+  const p = id? clone(byId(S.proben,id)) : Object.assign({nr:nextNr(), eingang:todayISO(), status:"eingegangen", auftraege:[], ergebnisse:[], berichte:[], notizen:[]}, preset||{});
+  const pj = proj(p.projektId);
+  let h = '<div class="mh"><h3>'+(id?"Probe bearbeiten":"Probe erfassen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fProbe" class="form">'
+   + fld("nr","Probennummer",p.nr) + fld("eingang","Eingangsdatum",p.eingang,"","", "date")
+   + '<div class="f"><label for="i-lieferantId">Lieferant</label><select id="i-lieferantId" name="lieferantId"><option value="">— wählen —</option>'+S.lieferanten.slice().sort((x,y)=>(x.name||"").localeCompare(y.name||"")).map(l=>'<option value="'+esc(l.id)+'" '+(p.lieferantId===l.id?"selected":"")+'>'+esc(l.name+(l.ort?" · "+l.ort:""))+'</option>').join("")+'</select><small>'+(p.lieferant&&!p.lieferantId?'Bisher als Text: '+esc(p.lieferant)+'. ':'')+'Neue Lieferanten unter „Lieferanten“ anlegen.</small></div>'
+   + sel("material","Materialart",MATERIAL,p.material,true)
+   + fld("bezeichnung","Bezeichnung der Probe",p.bezeichnung,"full",true)
+   + '<div class="f"><label for="i-projektId">Projekt</label><select id="i-projektId" name="projektId"><option value="">— wählen —</option>'+S.projekte.map(x=>'<option value="'+esc(x.id)+'" '+(p.projektId===x.id?"selected":"")+'>'+esc(x.nr+" · "+(x.kurz||x.titel))+'</option>').join("")+'</select></div>'
+   + '<div class="f"><label for="i-setId">Analyseset</label><select id="i-setId" name="setId">'+setOptions(pj,p.setId)+'</select></div>'
+   + fld("variante","Variante / Dosierung",p.variante,"","z.B. + Diatomit 10 %, Wiederholung B")
+   + fld("lagerort","Lagerort",p.lagerort,"","z.B. Regal 2, Kühlraum")
+   + sel("status","Status",PROBEN_STATUS.map(x=>x[0]),p.status)
+   + sel("bearbeiter","Bearbeiter",S.team,p.bearbeiter,true)
+   + '<div class="f full"><label class="checks" style="text-transform:none;letter-spacing:0;font-family:var(--f-body)"><label><input type="checkbox" id="i-kontrolle" '+(p.kontrolle?"checked":"")+'> Kontrolle / Referenz (unbehandelt, Grundsubstrat oder Ausgangsmaterial). Die anderen Proben des Sets werden automatisch damit verglichen.</label></label></div>'
+   + (id? "" : area("notiz","Notiz zum Eingang","",""))
+   + '</form><div class="mf">'+(id?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Probe löschen</button></span>':'')+'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveProbe">'+(id?"Speichern":"Erfassen")+'</button></div>';
+  openModal(h);
+  $("#i-projektId").onchange = e => { $("#i-setId").innerHTML = setOptions(proj(e.target.value), ""); };
+  $("#saveProbe").onclick = async ()=>{
+    const f = formData("#fProbe");
+    if(!f.bezeichnung){ toast("Bitte eine Bezeichnung angeben."); return; }
+    if(!id && S.proben.some(x=>x.nr===f.nr)){ toast("Die Probennummer gibt es schon."); return; }
+    const notiz = f.notiz; delete f.notiz;
+    Object.assign(p,f); p.kontrolle = !!$("#i-kontrolle").checked; delete p.id;
+    if(!id){ p.erfasstVon=S.meId||""; p.erfasstAm=new Date().toISOString(); if(notiz) p.notizen=[{when:p.erfasstAm, who:S.meId||"", text:notiz}]; }
+    const docId = id || S.db.collection("proben").doc().id;
+    await write("proben", docId, p); toast(id?"Probe gespeichert":"Probe "+p.nr+" erfasst"); showProbe(docId);
+  };
+  wireDelete(async()=>{ await remove("proben",id); closeModal(); toast("Probe gelöscht"); });
+}
+function setOptions(pj, cur){ return '<option value="">— ohne Set —</option>'+((pj&&pj.sets)||[]).map(s=>'<option value="'+esc(s.id)+'" '+(cur===s.id?"selected":"")+'>'+esc(s.name)+'</option>').join(""); }
+
+function showProbe(id){
+  const p = byId(S.proben,id); if(!p){ closeModal(); return; }
+  const pj = proj(p.projektId), s = setOf(pj,p.setId);
+  let h = '<div class="mh"><div><span class="mono" style="color:var(--muted)">'+esc(p.nr)+'</span> '+pill(p.status,PROBEN_STATUS)+'<h3>'+esc(p.bezeichnung)+'</h3></div><button class="xbtn" data-close aria-label="Schließen">×</button></div>';
+  h += '<div class="tw"><table class="t"><tbody>'
+    + row("Projekt", pj? esc(pj.nr+" · "+pj.titel):"–") + row("Analyseset", s? esc(s.name):"–")
+    + row("Lieferant", p.lieferantId&&lief(p.lieferantId)? '<a href="#lieferanten" data-lief="'+esc(p.lieferantId)+'" style="color:var(--accent)">'+esc(liefName(p))+'</a>' : esc(liefName(p)||"–")) + row("Materialart", esc(p.material||"–")) + row("Variante / Dosierung", esc(p.variante||"–"))
+    + row("Eingang", fmtD(p.eingang)) + row("Lagerort", esc(p.lagerort||"–"))
+    + row("Bearbeiter", esc(p.bearbeiter||"–")) + row("Rolle im Vergleich", p.kontrolle? '<span class="pill p-s3">Kontrolle / Referenz</span>' : "Variante")
+    + row("Erfasst", (p.erfasstVon? esc(nameOf(p.erfasstVon))+", ":"")+(p.erfasstAm? fmtDT(p.erfasstAm):"–"))
+    + '</tbody></table></div>';
+
+  // Fotos / Etiketten
+  h += sectionH("Fotos / Etiketten");
+  const fotos = p.fotos||[];
+  h += '<div class="fotoGrid">'+fotos.map((f,i)=>'<div class="fotoItem"><a href="/_blob/'+esc(f.assetId)+'" target="_blank" rel="noopener"><img src="/_blob/'+esc(f.assetId)+'" alt="'+esc(f.name||"Foto")+'" loading="lazy"></a>'+(canW()?'<button class="fotoDel" data-delfoto="'+i+'" aria-label="Foto entfernen">×</button>':'')+'</div>').join("")+(fotos.length?'':'<span class="sub">Noch keine Fotos.</span>')+'</div>';
+  if(S.assets && canW()) h += '<div id="fotoDrop" class="fotoDrop"><div class="fotoActions"><label class="linklike">Fotos wählen<input id="fotoInput" type="file" accept="image/*" multiple hidden></label><label class="linklike">Kamera<input id="fotoCam" type="file" accept="image/*" capture="environment" hidden></label></div><div class="sub">Am Handy direkt aufnehmen, am Laptop die Fotos per Drag-and-Drop hierher ziehen.</div></div>';
+  else if(canW()) h += '<div class="sub">Fotos hinzufügen können Personen mit der Freigabe „Editor“.</div>';
+
+  if(s){ h += '<div class="set" style="margin-top:12px"><dl><dt>Forschungsfrage</dt><dd>'+esc(s.frage||"–")+'</dd><dt>Erwartung</dt><dd>'+esc(s.erwartung||"–")+'</dd><dt>Analysen</dt><dd>'+(s.analysen||[]).map(c=>'<span class="chip" data-ana="'+esc(c)+'" tabindex="0">'+esc(c)+'</span>').join("")+'</dd></dl></div>'; }
+
+  // Laboraufträge
+  h += sectionH("Laboraufträge");
+  const auf = p.auftraege||[];
+  if(auf.length){ h += '<div class="tw"><table class="t"><thead><tr><th>Labor</th><th>Analysen</th><th>Versandt</th><th>Status</th><th></th></tr></thead><tbody>';
+    auf.forEach((a,i)=>{ const l=lab(a.labor); h += '<tr><td>'+esc(l?l.name:"–")+'</td><td>'+(a.analysen||[]).map(c=>'<span class="chip" data-ana="'+esc(c)+'" tabindex="0">'+esc(c)+'</span>').join("")+'</td><td>'+fmtD(a.versand)+'</td><td>'+(canW()? '<select data-aufstatus="'+i+'" aria-label="Status Auftrag">'+AUF_STATUS.map(x=>'<option '+(a.status===x[0]?"selected":"")+'>'+x[0]+'</option>').join("")+'</select>' : pill(a.status,AUF_STATUS))+'</td><td>'+(canW()?'<button class="btn ghost sm" data-delauf="'+i+'">entfernen</button>':'')+'</td></tr>'; });
+    h += '</tbody></table></div>'; }
+  else h += '<div class="sub" style="margin-bottom:6px">Noch keine Laboraufträge.</div>';
+  if(canW()){
+    if(s && (s.analysen||[]).length) h += '<button class="btn ghost sm" id="autoAuf" style="margin-top:8px">Aufträge aus Analyseset anlegen</button> ';
+    h += '<div class="inline auf"><div class="f"><label for="na-lab">Labor</label><select id="na-lab">'+S.labore.map(l=>'<option value="'+esc(l.id)+'">'+esc(l.name)+'</option>').join("")+'</select></div>'
+      + '<div class="f"><label for="na-an">Analysen (Kürzel, mit Komma)</label><input id="na-an" placeholder="z.B. WK, kf"></div>'
+      + '<div class="f"><label for="na-vers">Versanddatum</label><input id="na-vers" type="date"></div>'
+      + '<div class="f"><label for="na-st">Status</label><select id="na-st">'+AUF_STATUS.map(x=>'<option>'+x[0]+'</option>').join("")+'</select></div>'
+      + '<button class="btn sm" id="addAuf">Hinzufügen</button></div>';
+  }
+
+  // Ergebnisse
+  h += sectionH("Ergebnisse");
+  const erg = p.ergebnisse||[];
+  if(erg.length){ const ref = controlMeans(p);
+    h += '<div class="tw"><table class="t"><thead><tr><th>Analyse</th><th>Parameter</th><th class="num">Wert</th><th>Einheit</th><th>Sollbereich</th><th>Vergleich Kontrolle</th><th>Labor</th><th>Datum</th><th></th></tr></thead><tbody>';
+    erg.forEach((e,i)=>{ const l=lab(e.labor); const ev=evalSoll(e); const k=ekey(e); const r=ref[k];
+      h += '<tr><td><span class="chip" data-ana="'+esc(e.code)+'" tabindex="0">'+esc(e.code)+'</span></td><td>'+esc(e.parameter||"–")+'</td><td class="num">'+esc(e.wert)+'</td><td>'+esc(e.einheit||"")+'</td><td>'+ev.html+'</td><td>'+deltaHtml(e.wert,r)+'</td><td>'+esc(l?l.kurz||l.name:"–")+'</td><td>'+fmtD(e.datum)+'</td><td>'+(canW()?'<button class="btn ghost sm" data-delerg="'+i+'">entfernen</button>':'')+'</td></tr>'; });
+    h += '</tbody></table></div>'; }
+  else h += '<div class="sub" style="margin-bottom:6px">Noch keine Ergebnisse eingetragen.</div>';
+  if(canW()){
+    const codes = (s&&s.analysen&&s.analysen.length)? s.analysen : S.analysen.map(a=>a.code);
+    h += '<div class="inline"><div class="f"><label for="ne-code">Analyse</label><select id="ne-code">'+codes.map(c=>'<option>'+esc(c)+'</option>').join("")+'</select></div>'
+      + '<div class="f"><label for="ne-par">Parameter</label><input id="ne-par" placeholder="z.B. P₂O₅, Pb"></div>'
+      + '<div class="f"><label for="ne-wert">Wert</label><input id="ne-wert" inputmode="decimal" placeholder="z.B. 12,4"></div>'
+      + '<div class="f"><label for="ne-einh">Einheit</label><input id="ne-einh" placeholder="z.B. Vol.-%"></div>'
+      + '<div class="f"><label for="ne-lab">Labor</label><select id="ne-lab">'+S.labore.map(l=>'<option value="'+esc(l.id)+'">'+esc(l.kurz||l.name)+'</option>').join("")+'</select></div>'
+      + '<div class="f"><label for="ne-dat">Datum</label><input id="ne-dat" type="date" value="'+todayISO()+'"></div>'
+      + '<button class="btn sm" id="addErg">Eintragen</button></div>';
+  }
+
+  // Prüfberichte
+  h += sectionH("Prüfberichte");
+  const ber = p.berichte||[];
+  if(ber.length) h += '<div class="notes">'+ber.map((b,i)=>{ const l=lab(b.labor); return '<div class="note" style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span><a href="/_blob/'+esc(b.assetId)+'" target="_blank" rel="noopener" style="color:var(--accent)">'+esc(b.name)+'</a><span class="sub">'+esc(l?l.name:"")+(b.berichtNr?' · Nr. '+esc(b.berichtNr):'')+' · '+fmtD(b.datum)+'</span></span></div>'; }).join("")+'</div>';
+  else h += '<div class="sub" style="margin-bottom:6px">Noch kein Prüfbericht hinterlegt.</div>';
+  if(S.assets && canW()) h += '<div class="inline auf"><div class="f"><label for="nb-file">PDF / Bild</label><input id="nb-file" type="file" accept="application/pdf,image/*"></div><div class="f"><label for="nb-lab">Labor</label><select id="nb-lab">'+S.labore.map(l=>'<option value="'+esc(l.id)+'">'+esc(l.name)+'</option>').join("")+'</select></div><div class="f"><label for="nb-nr">Berichtsnummer</label><input id="nb-nr"></div><div class="f"><label for="nb-dat">Datum</label><input id="nb-dat" type="date" value="'+todayISO()+'"></div><button class="btn sm" id="addBer">Hochladen</button></div>';
+  else if(canW()) h += '<div class="sub">Prüfberichte hochladen können Personen mit der Freigabe „Editor“.</div>';
+
+  h += notesBlock("proben", p);
+  h += '<div class="mf">'+(canW()?'<button class="btn ghost" id="editP">Stammdaten bearbeiten</button>':'')+'<button class="btn" data-close>Schließen</button></div>';
+  openModal(h, ()=>showProbe(id));
+
+  const save = async (mut, msg) => { const d=clone(byId(S.proben,id)); delete d.id; mut(d); await write("proben",id,d); if(msg) toast(msg); };
+  const q = s => document.querySelector("#modalRoot "+s);
+  const uploadFotos = async (files) => {
+    const arr = [...files].filter(f=>f && /^image\//.test(f.type));
+    if(!arr.length){ toast("Bitte Bilddateien wählen."); return; }
+    const drop=q("#fotoDrop"); if(drop) drop.classList.add("busy");
+    let ok=0;
+    for(const file of arr){
+      try{ const r=await S.assets.upload(file); await save(d=>{ d.fotos=d.fotos||[]; d.fotos.push({assetId:r.id, name:file.name, when:new Date().toISOString(), who:S.meId||""}); }); ok++; }
+      catch(e){ const m={too_large:"Ein Bild ist zu groß (max. 20 MB).",unsupported_type:"Dieser Dateityp wird nicht unterstützt.",quota_or_state:"Der Speicher ist voll.",rate_limited:"Zu viele Uploads, bitte kurz warten."}; toast(m[e&&e.code]||"Upload fehlgeschlagen."); }
+    }
+    if(ok){ toast(ok===1?"Foto hinzugefügt":ok+" Fotos hinzugefügt"); showProbe(id); }
+    else if(drop) drop.classList.remove("busy");
+  };
+  if(q("#fotoInput")) q("#fotoInput").onchange = e => uploadFotos(e.target.files);
+  if(q("#fotoCam")) q("#fotoCam").onchange = e => uploadFotos(e.target.files);
+  const fdrop=q("#fotoDrop");
+  if(fdrop){ ["dragenter","dragover"].forEach(ev=>fdrop.addEventListener(ev,e=>{ e.preventDefault(); fdrop.classList.add("drag"); })); fdrop.addEventListener("dragleave",e=>{ if(!fdrop.contains(e.relatedTarget)) fdrop.classList.remove("drag"); }); fdrop.addEventListener("drop",e=>{ e.preventDefault(); fdrop.classList.remove("drag"); if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length) uploadFotos(e.dataTransfer.files); }); }
+  document.querySelectorAll("#modalRoot [data-delfoto]").forEach(el=>el.onclick=()=>{ save(d=>{ (d.fotos||[]).splice(+el.dataset.delfoto,1); },"Foto entfernt").then(()=>showProbe(id)); });
+  if(q("#editP")) q("#editP").onclick = ()=>editProbe(id);
+  if(q("#addAuf")) q("#addAuf").onclick = ()=>{ const an=q("#na-an").value.split(/[,\s]+/).map(x=>x.trim()).filter(Boolean); if(!an.length){ toast("Bitte Analysen angeben."); return; } const st=q("#na-st").value; save(d=>{ d.auftraege=d.auftraege||[]; d.auftraege.push({labor:q("#na-lab").value, analysen:an, versand:q("#na-vers").value, status:st}); if(st==="versandt"&&(d.status==="eingegangen"||d.status==="in Vorbereitung")) d.status="beim Labor"; },"Auftrag angelegt"); };
+  if(q("#autoAuf")) q("#autoAuf").onclick = ()=>{ const groups={}; (s.analysen||[]).forEach(c=>{ const a=ana(c); const l=a&&a.labor? a.labor : "offen"; (groups[l]=groups[l]||[]).push(c); });
+    if(groups.offen){ toast("Für "+groups.offen.join(", ")+" ist kein Labor hinterlegt."); }
+    save(d=>{ d.auftraege=d.auftraege||[]; Object.keys(groups).filter(k=>k!=="offen").forEach(l=>{ if(!d.auftraege.some(a=>a.labor===l)) d.auftraege.push({labor:l, analysen:groups[l], versand:"", status:"geplant"}); }); },"Aufträge angelegt"); };
+  document.querySelectorAll("#modalRoot [data-aufstatus]").forEach(el=>el.onchange=()=>{ const i=+el.dataset.aufstatus; save(d=>{ d.auftraege[i].status=el.value; if(el.value==="versandt"&&!d.auftraege[i].versand) d.auftraege[i].versand=todayISO(); const all=d.auftraege; if(all.length&&all.every(a=>a.status==="Ergebnis da")&&d.status==="beim Labor") d.status="Ergebnisse da"; else if(el.value==="versandt"&&(d.status==="eingegangen"||d.status==="in Vorbereitung")) d.status="beim Labor"; },"Status gespeichert"); });
+  document.querySelectorAll("#modalRoot [data-delauf]").forEach(el=>el.onclick=()=>save(d=>d.auftraege.splice(+el.dataset.delauf,1),"Auftrag entfernt"));
+  if(q("#addErg")) q("#addErg").onclick = ()=>{ const w=q("#ne-wert").value.trim(); if(!w){ toast("Bitte einen Wert eintragen."); return; } save(d=>{ d.ergebnisse=d.ergebnisse||[]; d.ergebnisse.push({code:q("#ne-code").value, parameter:q("#ne-par").value.trim(), wert:w, einheit:q("#ne-einh").value.trim(), labor:q("#ne-lab").value, datum:q("#ne-dat").value}); },"Ergebnis eingetragen"); };
+  document.querySelectorAll("#modalRoot [data-delerg]").forEach(el=>el.onclick=()=>save(d=>d.ergebnisse.splice(+el.dataset.delerg,1),"Ergebnis entfernt"));
+  if(q("#addBer")) q("#addBer").onclick = async ()=>{ const file=q("#nb-file").files[0]; if(!file){ toast("Bitte eine Datei wählen."); return; }
+    const btn=q("#addBer"); btn.disabled=true; btn.textContent="Lädt …";
+    try { const r = await S.assets.upload(file); await save(d=>{ d.berichte=d.berichte||[]; d.berichte.push({assetId:r.id, name:file.name, labor:q("#nb-lab").value, berichtNr:q("#nb-nr").value.trim(), datum:q("#nb-dat").value}); },"Prüfbericht gespeichert"); }
+    catch(e){ const m={too_large:"Die Datei ist zu groß (max. 20 MB).",unsupported_type:"Dieser Dateityp wird nicht unterstützt. Bitte PDF oder Bild.",quota_or_state:"Der Speicher ist voll.",rate_limited:"Zu viele Uploads, bitte kurz warten."}; toast(m[e&&e.code]||"Upload fehlgeschlagen."); btn.disabled=false; btn.textContent="Hochladen"; }
+  };
+}
+// ---------- Automatische Bewertung ----------
+const ekey = e => e.code+(e.parameter?" "+e.parameter:"")+(e.einheit?" ["+e.einheit+"]":"");
+const num = v => { if(v==null) return null; const s=String(v).trim().replace(/\s/g,"").replace(",","."); if(/^[<>]/.test(s)) return null; const n=parseFloat(s); return isFinite(n)? n : null; };
+function evalSoll(e){
+  const a = ana(e.code); const v = num(e.wert);
+  if(!a || (a.sollMin==null && a.sollMax==null) || (a.sollMin===""&&a.sollMax==="")) return {state:"none", html:'<span class="sub">kein Sollbereich</span>'};
+  if(v==null) return {state:"none", html:'<span class="sub">nicht numerisch</span>'};
+  const lo = num(a.sollMin), hi = num(a.sollMax);
+  const rng = (lo!=null?String(a.sollMin):"")+" … "+(hi!=null?String(a.sollMax):"");
+  if(lo!=null && v<lo) return {state:"low", html:'<span class="pill p-warn">unter Soll</span><span class="sub">'+esc(rng)+'</span>'};
+  if(hi!=null && v>hi) return {state:"high", html:'<span class="pill p-warn">über Soll</span><span class="sub">'+esc(rng)+'</span>'};
+  return {state:"ok", html:'<span class="pill p-s1">im Soll</span><span class="sub">'+esc(rng)+'</span>'};
+}
+function controlMeans(p){
+  // Mittelwerte der Kontrollproben im selben Projekt und Set
+  if(!p || !p.projektId || p.kontrolle) return {};
+  const ctrl = S.proben.filter(x=>x.kontrolle && x.projektId===p.projektId && (x.setId===p.setId || !p.setId) && x.id!==p.id);
+  const acc = {};
+  ctrl.forEach(c=>(c.ergebnisse||[]).forEach(e=>{ const n=num(e.wert); if(n==null) return; const k=ekey(e); (acc[k]=acc[k]||[]).push(n); }));
+  const out={}; for(const k in acc) out[k]=acc[k].reduce((a,b)=>a+b,0)/acc[k].length; return out;
+}
+function deltaHtml(wert, ref){
+  const v=num(wert); if(v==null || ref==null) return '<span class="sub">–</span>';
+  if(ref===0) return '<span class="sub">Kontrolle 0</span>';
+  const d=(v-ref)/Math.abs(ref)*100; const s=(d>0?"+":"")+d.toLocaleString("de-DE",{maximumFractionDigits:1})+" %";
+  return '<span class="mono" style="color:'+(Math.abs(d)<5?"var(--muted)":d>0?"var(--s1)":"var(--s2)")+'">'+s+'</span><span class="sub">Kontrolle '+ref.toLocaleString("de-DE",{maximumFractionDigits:3})+'</span>';
+}
+const row = (k,v) => '<tr><td style="color:var(--muted);width:38%">'+k+'</td><td>'+v+'</td></tr>';
+const sectionH = t => '<h4 style="font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:20px 0 8px">'+t+'</h4>';
+
+function notesBlock(col, doc){
+  let h = sectionH("Notizen");
+  const n = (doc.notizen||[]).slice().sort((a,b)=>(b.when||"").localeCompare(a.when||""));
+  h += '<div class="notes">'+(n.length? n.map(x=>'<div class="note"><div class="w">'+esc(nameOf(x.who))+' · '+fmtDT(x.when)+'</div>'+esc(x.text).replace(/\n/g,"<br>")+'</div>').join("") : '<div class="sub">Noch keine Notizen.</div>')+'</div>';
+  if(canW()) h += '<div class="addnote"><textarea id="noteTxt" placeholder="Notiz hinzufügen …" aria-label="Notiz"></textarea><button class="btn sm" data-addnote="'+col+'" data-doc="'+esc(doc.id)+'">Speichern</button></div>';
+  return h;
+}
+
+// ---------- Ansicht: Lieferanten ----------
+const adr = l => [l.strasse, [l.plz,l.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+function vLieferanten(){
+  let h = '<div class="head"><div><h2>Lieferanten</h2><div class="lede">Alle Lieferanten von Proben und Materialien mit Standort, Adresse und Land.</div></div><div class="actions">'+(canW()?'<button class="btn" data-act="newLieferant">Lieferant anlegen</button>':'')+'</div></div>';
+  h += '<div class="toolbar"><input id="lq" type="search" placeholder="Suche Name, Ort, Material …" value="'+esc(S.filter.lq||"")+'" aria-label="Lieferanten suchen">'
+    + '<select id="lland" aria-label="Land"><option value="">Alle Länder</option>'+[...new Set(S.lieferanten.map(l=>l.land).filter(Boolean))].sort().map(x=>'<option '+(S.filter.lland===x?"selected":"")+'>'+esc(x)+'</option>').join("")+'</select></div>';
+  if(!S.lieferanten.length) return h + '<div class="panel empty"><b>Noch keine Lieferanten</b>'+(S.loaded.lieferanten?'Lege den ersten Lieferanten an. Danach lässt er sich bei jeder Probenerfassung auswählen.':'Daten werden geladen …')+'</div>';
+  const q=(S.filter.lq||"").trim().toLowerCase();
+  const list = S.lieferanten.filter(l=>(!S.filter.lland||l.land===S.filter.lland) && (!q || [l.name,l.standort,l.ort,l.strasse,l.land,l.liefert,l.ansprechpartner].join(" ").toLowerCase().includes(q))).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  if(!list.length) return h + '<div class="panel empty">Kein Lieferant passt zur Suche.</div>';
+  h += '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Standort</th><th>Adresse</th><th>Land</th><th>Ansprechpartner</th><th>Liefert</th><th class="num">Proben</th></tr></thead><tbody>';
+  list.forEach(l=>{ const n=S.proben.filter(p=>p.lieferantId===l.id).length;
+    h += '<tr class="click" data-lief="'+esc(l.id)+'" tabindex="0"><td><b>'+esc(l.name)+'</b></td><td>'+esc(l.standort||"–")+'</td><td>'+esc(adr(l)||"–")+'</td><td>'+esc(l.land||"–")+'</td><td>'+esc(l.ansprechpartner||"–")+(l.telefon?'<span class="sub">'+esc(l.telefon)+'</span>':'')+'</td><td>'+esc(l.liefert||"–")+'</td><td class="num">'+n+'</td></tr>'; });
+  return h + '</tbody></table></div>';
+}
+function showLieferant(id){
+  const l = lief(id); if(!l){ closeModal(); return; }
+  const proben = S.proben.filter(p=>p.lieferantId===id).sort((a,b)=>(b.nr||"").localeCompare(a.nr||""));
+  let h = '<div class="mh"><div><span class="lab-tag">Lieferant</span><h3>'+esc(l.name)+'</h3></div><button class="xbtn" data-close aria-label="Schließen">×</button></div>';
+  h += '<div class="tw"><table class="t"><tbody>'+row("Standort",esc(l.standort||"–"))+row("Adresse",esc(adr(l)||"–"))+row("Land",esc(l.land||"–"))+row("Ansprechpartner",esc(l.ansprechpartner||"–"))+row("Telefon",esc(l.telefon||"–"))+row("E-Mail",esc(l.email||"–"))+row("Liefert",esc(l.liefert||"–"))+(l.notiz?row("Notiz",esc(l.notiz).replace(/\n/g,"<br>")):"")+'</tbody></table></div>';
+  h += sectionH("Proben von diesem Lieferanten ("+proben.length+")");
+  if(proben.length){ h += '<div class="tw"><table class="t"><thead><tr><th>Probe</th><th>Projekt</th><th>Eingang</th><th>Status</th></tr></thead><tbody>';
+    proben.forEach(x=>{ const pj=proj(x.projektId); h+='<tr class="click" data-probe="'+esc(x.id)+'" tabindex="0"><td class="mono">'+esc(x.nr)+'<span class="sub" style="font-family:var(--f-body)">'+esc(x.bezeichnung)+'</span></td><td>'+esc(pj?pj.kurz||pj.titel:"–")+'</td><td>'+fmtD(x.eingang)+'</td><td>'+pill(x.status,PROBEN_STATUS)+'</td></tr>'; });
+    h += '</tbody></table></div>'; }
+  else h += '<div class="sub">Noch keine Proben zugeordnet.</div>';
+  h += '<div class="mf">'+(canW()?'<button class="btn ghost" data-act="newProbeFrom" data-lid="'+esc(id)+'">Probe von diesem Lieferanten erfassen</button><button class="btn ghost" data-editlief="'+esc(id)+'">Bearbeiten</button>':'')+'<button class="btn" data-close>Schließen</button></div>';
+  openModal(h, ()=>showLieferant(id));
+}
+function editLieferant(id){
+  const l = id? clone(lief(id)) : {land:"Deutschland"};
+  let h = '<div class="mh"><h3>'+(id?"Lieferant bearbeiten":"Lieferant anlegen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fLief" class="form">'
+    + fld("name","Name / Firma",l.name,"full",true)
+    + fld("standort","Standort",l.standort,"","z.B. Werk Nord, Kiesgrube, Brauerei")
+    + fld("liefert","Liefert",l.liefert,"","z.B. Rasentragschicht, Diatomit")
+    + fld("strasse","Straße und Hausnummer",l.strasse,"full")
+    + fld("plz","PLZ",l.plz) + fld("ort","Ort",l.ort)
+    + fld("land","Land",l.land) + fld("ansprechpartner","Ansprechpartner",l.ansprechpartner)
+    + fld("telefon","Telefon",l.telefon) + fld("email","E-Mail",l.email,"","","email")
+    + area("notiz","Notiz",l.notiz)
+    + '</form><div class="mf">'+(id?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Lieferant löschen</button></span>':'')+'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveLief">Speichern</button></div>';
+  openModal(h);
+  $("#saveLief").onclick = async ()=>{ const f=formData("#fLief"); if(!f.name){ toast("Bitte einen Namen angeben."); return; } Object.assign(l,f); delete l.id; const docId=id||S.db.collection("lieferanten").doc().id; await write("lieferanten",docId,l); toast("Lieferant gespeichert"); showLieferant(docId); };
+  wireDelete(async()=>{ if(S.proben.some(p=>p.lieferantId===id)){ toast("Dem Lieferanten sind noch Proben zugeordnet."); return; } await remove("lieferanten",id); closeModal(); toast("Lieferant gelöscht"); });
+}
+
+// ---------- Ansicht: Analysen ----------
+function vAnalysen(){
+  let h = '<div class="head"><div><h2>Analysen</h2><div class="lede">Jede Analyse mit Erklärung, Durchführung, Zweck, Norm, Labor und Preis. Normen mit dem Hinweis „vorläufig“ sind noch mit dem jeweiligen Labor abzugleichen.</div></div><div class="actions">'+(canW()?'<button class="btn" data-act="newAnalyse">Analyse anlegen</button>':'')+'</div></div>';
+  if(!S.analysen.length) return h + '<div class="panel empty"><b>Noch kein Analysenkatalog</b>'+(S.loaded.analysen?'Der Katalog wird eingespielt oder kann hier angelegt werden.':'Daten werden geladen …')+'</div>';
+  const groups = {}; S.analysen.forEach(a=>{ const k=a.labor||"offen"; (groups[k]=groups[k]||[]).push(a); });
+  const order = S.labore.map(l=>l.id).concat(["offen"]);
+  order.forEach(k=>{ if(!groups[k]) return; const l=lab(k);
+    h += '<div class="panel"><h3>'+esc(l? l.name : "Labor noch offen")+'</h3><div class="ana-list">';
+    groups[k].sort((a,b)=>a.code.localeCompare(b.code)).forEach(a=>{ h += '<button class="acard" data-ana="'+esc(a.code)+'"><code>'+esc(a.code)+'</code>'+(a.normStatus==="bestätigt"?'<span class="src ok">Norm aus Katalog</span>':'<span class="src tbd">Norm vorläufig</span>')+'<b>'+esc(a.name)+'</b><span class="sub">'+esc(a.norm||"Norm offen")+' · '+eur(a.preis)+'</span></button>'; });
+    h += '</div></div>'; });
+  return h;
+}
+function showAnalyse(code){
+  const a = ana(code); if(!a){ toast("Analyse „"+code+"“ ist nicht im Katalog."); return; }
+  const l = lab(a.labor);
+  const used = []; S.projekte.forEach(p=>(p.sets||[]).forEach(s=>{ if((s.analysen||[]).includes(code)) used.push((p.kurz||p.titel)+" · "+s.name); }));
+  let h = '<div class="mh"><div><span class="mono" style="color:var(--accent)">'+esc(a.code)+'</span>'+(a.normStatus==="bestätigt"?'<span class="src ok">Norm aus Leistungskatalog</span>':'<span class="src tbd">Norm vorläufig</span>')+'<h3>'+esc(a.name)+'</h3></div><button class="xbtn" data-close aria-label="Schließen">×</button></div><div class="detail">'
+    + '<h4>Was ist das?</h4><p>'+esc(a.was||"–")+'</p>'
+    + '<h4>Wie wird es gemacht?</h4><p>'+esc(a.wie||"–")+'</p>'
+    + '<h4>Was wir uns davon erhoffen</h4><p>'+esc(a.wozu||"–")+'</p>'
+    + '<h4>Norm / Methode</h4><p>'+esc(a.norm||"offen")+(a.normHinweis?"\n"+esc(a.normHinweis):"")+'</p>'
+    + '<h4>Sollbereich für die automatische Bewertung</h4><p>'+((a.sollMin!=null&&a.sollMin!=="")||(a.sollMax!=null&&a.sollMax!=="")? esc((a.sollMin??"")+" … "+(a.sollMax??"")+(a.einheit?" "+a.einheit:""))+(a.sollBezug?"\nBezug: "+esc(a.sollBezug):"") : "noch nicht festgelegt")+'</p>'
+    + '<h4>Labor · Preis</h4><p>'+esc(l?l.name:"noch offen")+' · '+eur(a.preis)+' netto je Probe'+(a.einheit?' · Ergebnis in '+esc(a.einheit):'')+'</p>'
+    + (used.length? '<h4>Verwendet in</h4><p>'+used.map(esc).join("\n")+'</p>' : '')
+    + '</div><div class="mf">'+(canW()?'<button class="btn ghost" data-editana="'+esc(a.id)+'">Bearbeiten</button>':'')+'<button class="btn" data-close>Schließen</button></div>';
+  openModal(h);
+}
+function editAnalyse(id){
+  const a = id? clone(byId(S.analysen,id)) : {normStatus:"vorläufig"};
+  let h = '<div class="mh"><h3>'+(id?"Analyse bearbeiten":"Analyse anlegen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fAna" class="form">'
+    + fld("code","Kürzel",a.code,"",true) + fld("name","Bezeichnung",a.name,"",true)
+    + area("was","Was ist das?",a.was) + area("wie","Wie wird es gemacht?",a.wie) + area("wozu","Was wir uns davon erhoffen",a.wozu)
+    + fld("norm","Norm / Methode",a.norm,"full") + fld("normHinweis","Hinweis zur Norm",a.normHinweis,"full")
+    + sel("normStatus","Norm-Status",["vorläufig","bestätigt"],a.normStatus)
+    + '<div class="f"><label for="i-labor">Labor</label><select id="i-labor" name="labor"><option value="">noch offen</option>'+S.labore.map(l=>'<option value="'+esc(l.id)+'" '+(a.labor===l.id?"selected":"")+'>'+esc(l.name)+'</option>').join("")+'</select></div>'
+    + fld("preis","Preis netto je Probe (€)",a.preis,"","leer = offen","number") + fld("einheit","Einheit des Ergebnisses",a.einheit)
+    + fld("sollMin","Sollbereich von",a.sollMin,"","leer = keine Untergrenze") + fld("sollMax","Sollbereich bis",a.sollMax,"","leer = keine Obergrenze")
+    + fld("sollBezug","Bezug des Sollbereichs",a.sollBezug,"full","z.B. DIN 18035-4 Rasentragschicht")
+    + '</form><div class="mf">'+(id?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Löschen</button></span>':'')+'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveAna">Speichern</button></div>';
+  openModal(h);
+  $("#saveAna").onclick = async ()=>{ const f=formData("#fAna"); if(!f.code||!f.name){ toast("Kürzel und Bezeichnung angeben."); return; }
+    f.preis = f.preis===""? null : Number(f.preis); Object.assign(a,f); delete a.id;
+    const docId = id || f.code.replace(/[^A-Za-z0-9_\-.]/g,"_");
+    await write("analysen",docId,a); toast("Analyse gespeichert"); showAnalyse(a.code); };
+  wireDelete(async()=>{ await remove("analysen",id); closeModal(); toast("Analyse gelöscht"); });
+}
+
+// ---------- Ansicht: Labore ----------
+function vLabore(){
+  let h = '<div class="head"><div><h2>Labore</h2><div class="lede">Eigenlabor und Fremdlabore mit Kontakt und den Analysen, die dort laufen.</div></div><div class="actions">'+(canW()?'<button class="btn" data-act="newLabor">Labor anlegen</button>':'')+'</div></div>';
+  if(!S.labore.length) return h+'<div class="panel empty">'+(S.loaded.labore?'Noch keine Labore angelegt.':'Daten werden geladen …')+'</div>';
+  h += '<div class="grid2">';
+  S.labore.slice().sort((a,b)=>(a.sort||9)-(b.sort||9)).forEach(l=>{
+    const an = S.analysen.filter(a=>a.labor===l.id).map(a=>a.code).sort();
+    let auf=0; S.proben.forEach(p=>(p.auftraege||[]).forEach(a=>{ if(a.labor===l.id&&a.status==="versandt") auf++; }));
+    h += '<div class="panel"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap"><h3>'+esc(l.name)+'</h3><span class="lab-tag">'+esc(l.rolle||"")+'</span></div>'
+      + '<div class="tw"><table class="t"><tbody>'+row("Ansprechpartner",esc(l.ansprechpartner||"noch offen"))+row("Telefon",esc(l.telefon||"noch offen"))+row("E-Mail",esc(l.email||"noch offen"))+row("Adresse",esc(l.adresse||"noch offen"))+row("Aufträge unterwegs",auf)+'</tbody></table></div>'
+      + '<div style="margin-top:10px">'+(an.length? an.map(c=>'<span class="chip" data-ana="'+esc(c)+'" tabindex="0">'+esc(c)+'</span>').join("") : '<span class="sub">Keine Analysen zugeordnet.</span>')+'</div>'
+      + (l.notiz? '<p class="sub" style="margin-top:8px">'+esc(l.notiz)+'</p>':'')
+      + (canW()?'<div style="margin-top:10px"><button class="btn ghost sm" data-editlab="'+esc(l.id)+'">Bearbeiten</button></div>':'')+'</div>';
+  });
+  return h+'</div>';
+}
+function editLabor(id){
+  const l = id? clone(lab(id)) : {sort:9};
+  let h = '<div class="mh"><h3>'+(id?"Labor bearbeiten":"Labor anlegen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fLab" class="form">'
+    + fld("name","Name",l.name,"",true) + fld("kurz","Kurzname",l.kurz) + fld("rolle","Rolle",l.rolle,"","z.B. Eigenlabor, Fremdlabor Bodenphysik")
+    + fld("ansprechpartner","Ansprechpartner",l.ansprechpartner) + fld("telefon","Telefon",l.telefon) + fld("email","E-Mail",l.email)
+    + fld("adresse","Adresse",l.adresse,"full") + area("notiz","Notiz",l.notiz)
+    + '</form><div class="mf"><button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveLab">Speichern</button></div>';
+  openModal(h);
+  $("#saveLab").onclick = async ()=>{ const f=formData("#fLab"); if(!f.name){ toast("Bitte einen Namen angeben."); return; } Object.assign(l,f); delete l.id; const docId=id||S.db.collection("labore").doc().id; await write("labore",docId,l); closeModal(); toast("Labor gespeichert"); };
+}
+
+// ---------- Ansicht: KI-Auswertung ----------
+function resultMatrix(pid, setId){
+  const proben = S.proben.filter(p=>p.projektId===pid && (!setId || p.setId===setId)).sort((a,b)=>(a.nr||"").localeCompare(b.nr||""));
+  const cols = [];
+  proben.forEach(p=>(p.ergebnisse||[]).forEach(e=>{ const k=ekey(e); if(!cols.includes(k)) cols.push(k); }));
+  const rows = proben.map(p=>{ const m={}, ev={}, de={}; const ref=controlMeans(p);
+    (p.ergebnisse||[]).forEach(e=>{ const k=ekey(e); m[k]=m[k]? m[k]+" / "+e.wert : e.wert; ev[k]=evalSoll(e).state; const v=num(e.wert); if(v!=null&&ref[k]!=null&&ref[k]!==0) de[k]=(v-ref[k])/Math.abs(ref[k])*100; });
+    return {p,m,ev,de}; });
+  rows.sort((a,b)=>(b.p.kontrolle?1:0)-(a.p.kontrolle?1:0));
+  return {proben, cols, rows};
+}
+function vAuswertung(){
+  const p = proj(S.kiSel.projekt); const s = setOf(p,S.kiSel.set);
+  let h = '<div class="head"><div><h2>KI-Auswertung</h2><div class="lede">Claude wertet die eingetragenen Ergebnisse eines Analysesets vor dem Hintergrund der Forschungsfrage aus. Die Auswertungsregeln unten sind das, was die KI dazulernt: Sie gehen in jede Auswertung ein und werden mit jeder Korrektur genauer.</div></div></div>';
+  h += '<div class="toolbar"><select id="kiP" aria-label="Projekt"><option value="">Projekt wählen</option>'+S.projekte.map(x=>'<option value="'+esc(x.id)+'" '+(S.kiSel.projekt===x.id?"selected":"")+'>'+esc(x.nr+" · "+(x.kurz||x.titel))+'</option>').join("")+'</select>'
+    + '<select id="kiS" aria-label="Analyseset"><option value="">Alle Sets</option>'+((p&&p.sets)||[]).map(x=>'<option value="'+esc(x.id)+'" '+(S.kiSel.set===x.id?"selected":"")+'>'+esc(x.name)+'</option>').join("")+'</select></div>';
+  if(!p) return h + '<div class="panel empty"><b>Projekt wählen</b>Dann erscheinen die Ergebnisse als Tabelle und können ausgewertet werden.</div>' + kiRegeln() + kiHistory(null);
+  const m = resultMatrix(p.id, s?s.id:"");
+  h += '<div class="panel"><h3>Ergebnisse '+esc(s? s.name : "aller Sets")+'</h3>';
+  if(s) h += '<p class="sub" style="margin:-4px 0 10px">Forschungsfrage: '+esc(s.frage||"–")+'</p>';
+  if(!m.cols.length) h += '<div class="empty">Für diese Auswahl sind noch keine Ergebnisse eingetragen.</div>';
+  else { h += '<div class="tw"><table class="t"><thead><tr><th>Probe</th>'+m.cols.map(c=>'<th>'+esc(c)+'</th>').join("")+'</tr></thead><tbody>';
+    m.rows.forEach(r=>{ h += '<tr class="click" data-probe="'+esc(r.p.id)+'" tabindex="0"><td class="mono">'+esc(r.p.nr)+(r.p.kontrolle?' <span class="pill p-s3">Kontrolle</span>':'')+'<span class="sub" style="font-family:var(--f-body)">'+esc(r.p.variante||r.p.bezeichnung)+'</span></td>'+m.cols.map(c=>{ const st=r.ev[c]; const col= st==="ok"?"var(--s1)":(st==="low"||st==="high")?"var(--warn)":"var(--fg)"; const d=r.de[c]; return '<td class="num"><span style="color:'+col+'">'+esc(r.m[c]||"–")+'</span>'+(d!=null?'<span class="sub">'+(d>0?"+":"")+d.toLocaleString("de-DE",{maximumFractionDigits:1})+' % ggü. Kontrolle</span>':'')+'</td>'; }).join("")+'</tr>'; });
+    h += '</tbody></table></div><p class="sub" style="margin-top:8px">Grün: im Sollbereich der Analyse. Gelb: außerhalb. Prozentwerte: Abweichung vom Mittel der Kontrollproben desselben Sets. Sollbereiche tragt ihr je Analyse ein.</p>'; }
+  h += '<div class="actions" style="margin-top:12px">';
+  if(S.sample && m.cols.length) h += S.kiBusy? '<button class="btn ghost" id="kiStop">Stopp</button>' : '<button class="btn" id="kiRun">Mit Claude auswerten</button>';
+  else if(!S.sample) h += '<span class="sub">Die KI-Auswertung ist in dieser Ansicht nicht verfügbar.</span>';
+  h += '</div>';
+  if(S.kiText || S.kiBusy){ h += '<h4 style="font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px">Auswertung (Entwurf, fachlich zu prüfen)</h4><div class="ki-out" id="kiOut">'+esc(S.kiText||"Claude denkt nach …")+'</div>';
+    if(S.kiText && !S.kiBusy && canW()) h += '<div class="actions" style="margin-top:10px"><button class="btn ghost" id="kiSave">Auswertung im Projekt speichern</button></div>'; }
+  h += '</div>';
+  return h + kiRegeln() + kiHistory(p.id);
+}
+function kiRegeln(){
+  return '<div class="panel"><h3>Auswertungsregeln</h3><p class="sub" style="margin:-4px 0 10px">Fachliche Vorgaben, Richtwerte und Korrekturen, die Claude bei jeder Auswertung beachten soll. Beispiel: „Wasserdurchlässigkeit von Rasentragschichten immer gegen die Anforderung der DIN 18035-4 prüfen.“</p>'
+   + '<textarea id="kiRegeln" style="width:100%;min-height:110px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px" '+(canW()?"":"readonly")+' aria-label="Auswertungsregeln">'+esc(S.ki.regeln||"")+'</textarea>'
+   + (canW()?'<div class="actions" style="margin-top:8px"><button class="btn ghost sm" id="kiRegelnSave">Regeln speichern</button></div>':'')+'</div>';
+}
+function kiHistory(pid){
+  const list = S.auswertungen.filter(a=>!pid||a.projektId===pid).sort((a,b)=>(b.when||"").localeCompare(a.when||""));
+  if(!list.length) return '';
+  return '<div class="panel"><h3>Gespeicherte Auswertungen</h3><div class="notes">'+list.map(a=>{ const p=proj(a.projektId), s=setOf(p,a.setId); return '<details class="note"><summary style="cursor:pointer"><b>'+esc((p?p.kurz||p.titel:"–")+(s?" · "+s.name:""))+'</b> <span class="sub" style="display:inline">'+esc(nameOf(a.who))+' · '+fmtDT(a.when)+'</span></summary><div style="white-space:pre-wrap;margin-top:8px">'+esc(a.text)+'</div></details>'; }).join("")+'</div></div>';
+}
+function buildPrompt(p, s, m){
+  const codes = new Set(); m.rows.forEach(r=>(r.p.ergebnisse||[]).forEach(e=>codes.add(e.code)));
+  const anaTxt = [...codes].map(c=>{ const a=ana(c); return a? "- "+c+" ("+a.name+"): "+(a.wozu||"")+" Norm: "+(a.norm||"offen")+((a.sollMin||a.sollMax)? " Sollbereich: "+(a.sollMin||"")+" bis "+(a.sollMax||"")+" "+(a.einheit||"")+(a.sollBezug?" ("+a.sollBezug+")":"") : " Sollbereich: nicht festgelegt") : "- "+c; }).join("\n");
+  const table = ["Probe | Rolle | Variante | "+m.cols.join(" | ")].concat(m.rows.map(r=>r.p.nr+" | "+(r.p.kontrolle?"Kontrolle":"Variante")+" | "+(r.p.variante||r.p.bezeichnung||"")+" | "+m.cols.map(c=>r.m[c]||"–").join(" | "))).join("\n");
+  const notes = m.rows.map(r=>(r.p.notizen||[]).map(n=>r.p.nr+": "+n.text).join("\n")).filter(Boolean).join("\n");
+  return ("Du bist Fachgutachter für Bodenkunde und Substrattechnik und wertest Laborergebnisse für die Produktentwicklung der ReSoilution GmbH aus.\n\n"
+    + "REGELN\n- Schreibe auf Deutsch, sachlich, als zusammenhängenden Fließtext mit kurzen Zwischenüberschriften.\n- Verwende niemals ein Semikolon.\n- Erfinde keine Messwerte, Normwerte oder Grenzwerte. Wenn ein Bewertungsmaßstab fehlt, sage das ausdrücklich.\n- Kennzeichne Unsicherheiten, fehlende Wiederholungen und Lücken deutlich.\n"
+    + (S.ki.regeln? "\nFACHLICHE AUSWERTUNGSREGELN DES TEAMS\n"+S.ki.regeln+"\n" : "")
+    + "\nPROJEKT\n"+p.titel+"\nForschungsfragen: "+(p.forschungsfragen||"–")+"\nErwartung: "+(p.erwartung||"–")+"\n"
+    + (s? "\nANALYSESET\n"+s.name+"\nForschungsfrage: "+(s.frage||"–")+"\nErwartung: "+(s.erwartung||"–")+"\n" : "")
+    + "\nANALYSEN\n"+anaTxt+"\n\nERGEBNISSE\n"+table+"\n"+(notes? "\nNOTIZEN ZU DEN PROBEN\n"+notes+"\n" : "")
+    + "\nAUFGABE\nGliedere in: 1. Befund (was die Daten zeigen, Vergleich der Varianten mit der Kontrolle bzw. dem Grundsubstrat), 2. Bezug zur Forschungsfrage und zur Erwartung, 3. Plausibilität und Auffälligkeiten, 4. Unsicherheiten und Datenlücken, 5. Empfohlene nächste Schritte.").slice(0, 120000);
+}
+
+// ---------- Ansicht: Assistent ----------
+function vAssistent(){
+  let h = '<div class="head"><div><h2>Assistent</h2><div class="lede">Freie Notizen zur Forschung festhalten und einem Projekt sowie einer Kategorie zuordnen. Auf Wunsch schlägt Claude eine Kategorie und ein passendes Projekt vor, entscheiden tust du.</div></div><div class="actions">'+(canW()?'<button class="btn" data-act="newNotiz">Notiz erfassen</button>':'')+'</div></div>';
+  const kats = [...new Set(S.notizen.map(n=>n.kategorie).filter(Boolean))].sort();
+  h += '<div class="toolbar"><select id="aProjekt" aria-label="Nach Projekt filtern"><option value="">Alle Projekte</option>'+S.projekte.map(p=>'<option value="'+esc(p.id)+'" '+(S.aFilter.projekt===p.id?"selected":"")+'>'+esc(p.kurz||p.titel)+'</option>').join("")+'</select>'
+    + '<select id="aKat" aria-label="Nach Kategorie filtern"><option value="">Alle Kategorien</option>'+kats.map(k=>'<option '+(S.aFilter.kategorie===k?"selected":"")+'>'+esc(k)+'</option>').join("")+'</select></div>';
+  if(!S.notizen.length) return h + '<div class="panel empty"><b>Noch keine Notizen</b>'+(S.loaded.notizen?'Halte deine erste Notiz fest und ordne sie einem Projekt und einer Kategorie zu.':'Daten werden geladen …')+'</div>';
+  let list = S.notizen.slice().sort((a,b)=>(b.when||"").localeCompare(a.when||""));
+  if(S.aFilter.projekt) list = list.filter(n=>n.projektId===S.aFilter.projekt);
+  if(S.aFilter.kategorie) list = list.filter(n=>n.kategorie===S.aFilter.kategorie);
+  if(!list.length) return h + '<div class="panel empty">Keine Notiz passt zu den Filtern.</div>';
+  h += '<div class="notes">';
+  list.forEach(n=>{ const pj=proj(n.projektId), l=lief(n.lieferantId), pr=byId(S.proben,n.probeId);
+    const meta = [l?'Lieferant: '+esc(l.name):'', pr?'Probe: '+esc(pr.nr):''].filter(Boolean).join(" · ");
+    h += '<button class="acard" data-notiz="'+esc(n.id)+'" style="width:100%" tabindex="0">'
+      + (n.kategorie?'<span class="pill p-s2">'+esc(n.kategorie)+'</span> ':'')
+      + (pj?'<span class="pill p-s1">'+esc(pj.kurz||pj.titel)+'</span> ':'')
+      + '<span class="sub" style="display:inline">'+esc(nameOf(n.who))+' · '+fmtDT(n.when)+'</span>'
+      + (n.titel?'<b style="margin-top:6px">'+esc(n.titel)+'</b>':'')
+      + '<div style="margin-top:4px;white-space:pre-wrap">'+esc((n.text||"").slice(0,240))+((n.text||"").length>240?' …':'')+'</div>'
+      + (meta?'<div class="sub" style="margin-top:6px">'+meta+'</div>':'')
+      + '</button>';
+  });
+  return h + '</div>';
+}
+
+function editNotiz(id){
+  const n = id? clone(byId(S.notizen,id)) : {titel:"", text:"", kategorie:"", projektId:"", lieferantId:"", probeId:""};
+  if(id && !n.id){ closeModal(); return; }
+  const kats = [...new Set(S.notizen.map(x=>x.kategorie).filter(Boolean))].sort();
+  const probenOpts = (pid,cur) => '<option value="">— ohne —</option>'+S.proben.filter(p=>!pid||p.projektId===pid).sort((a,b)=>(b.nr||"").localeCompare(a.nr||"")).map(p=>'<option value="'+esc(p.id)+'" '+(cur===p.id?"selected":"")+'>'+esc(p.nr+" · "+p.bezeichnung)+'</option>').join("");
+  const w = canW();
+  let h = '<div class="mh"><h3>'+(id?"Notiz":"Notiz erfassen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fNotiz" class="form">'
+    + fld("titel","Titel (optional)",n.titel,"full")
+    + '<div class="f full"><label for="i-text">Notiz</label><textarea id="i-text" name="text" '+(w?"":"readonly")+'>'+esc(n.text||"")+'</textarea></div>'
+    + '<div class="f"><label for="i-kategorie">Kategorie</label><input id="i-kategorie" name="kategorie" list="katList" value="'+esc(n.kategorie||"")+'" placeholder="z.B. Idee, Beobachtung, To-do"><datalist id="katList">'+kats.map(k=>'<option value="'+esc(k)+'">').join("")+'</datalist></div>'
+    + '<div class="f"><label for="i-projektId">Projekt</label><select id="i-projektId" name="projektId"><option value="">— ohne Projekt —</option>'+S.projekte.map(x=>'<option value="'+esc(x.id)+'" '+(n.projektId===x.id?"selected":"")+'>'+esc(x.nr+" · "+(x.kurz||x.titel))+'</option>').join("")+'</select></div>'
+    + '<div class="f"><label for="i-lieferantId">Lieferant (optional)</label><select id="i-lieferantId" name="lieferantId"><option value="">— ohne —</option>'+S.lieferanten.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(l=>'<option value="'+esc(l.id)+'" '+(n.lieferantId===l.id?"selected":"")+'>'+esc(l.name)+'</option>').join("")+'</select></div>'
+    + '<div class="f"><label for="i-probeId">Probe (optional)</label><select id="i-probeId" name="probeId">'+probenOpts(n.projektId,n.probeId)+'</select></div>'
+    + '</form><div class="mf">'+(id&&w?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Notiz löschen</button></span>':'')+(w&&S.sample?'<button class="btn ghost" id="suggestBtn">Vorschlag</button>':'')+'<button class="btn ghost" data-close>'+(w?"Abbrechen":"Schließen")+'</button>'+(w?'<button class="btn" id="saveNotiz">'+(id?"Speichern":"Erfassen")+'</button>':'')+'</div>';
+  openModal(h);
+  $("#i-projektId").onchange = e => { const cur=$("#i-probeId").value; $("#i-probeId").innerHTML=probenOpts(e.target.value,cur); };
+  if(w && S.sample){ const sb=$("#suggestBtn"); sb.onclick = async ()=>{
+    const text=$("#i-text").value.trim(); if(!text){ toast("Bitte zuerst eine Notiz schreiben."); return; }
+    sb.disabled=true; const old=sb.textContent; sb.textContent="Claude denkt nach …";
+    try {
+      const projListe = S.projekte.map(p=>"- "+(p.kurz||p.titel)+": "+(p.forschungsfragen||"").slice(0,120)).join("\n") || "keine";
+      const katListe = kats.length? kats.join(", ") : "keine vorhanden";
+      const prompt = "Du hilfst beim Einordnen einer Forschungsnotiz der ReSoilution GmbH. Antworte ausschließlich als JSON der Form {\"kategorie\":\"...\",\"projekt\":\"...\"}. Verwende keine Semikolons. Erfinde nichts. Wähle das Projekt anhand des Kurznamens aus der Liste oder gib \"\" wenn keines passt. Die Kategorie ist ein kurzes Schlagwort, nutze möglichst eine der vorhandenen.\n\nVORHANDENE KATEGORIEN: "+katListe+"\n\nPROJEKTE:\n"+projListe+"\n\nNOTIZ:\n"+text;
+      const r = await S.sample.json(prompt, {modelTier:"quick", cache:false});
+      if(r && typeof r==="object"){
+        if(r.kategorie) $("#i-kategorie").value=String(r.kategorie);
+        if(r.projekt){ const rp=String(r.projekt).toLowerCase(); const match=S.projekte.find(p=>(p.kurz||p.titel)===r.projekt)||S.projekte.find(p=>((p.kurz||"")+" "+(p.titel||"")).toLowerCase().includes(rp)); if(match){ $("#i-projektId").value=match.id; $("#i-probeId").innerHTML=probenOpts(match.id,""); } }
+        toast("Vorschlag eingetragen, bitte prüfen.");
+      } else toast("Kein Vorschlag möglich.");
+    } catch(err){ const m={not_granted:"Die KI-Vorschläge wurden nicht freigegeben.",rate_limited:"Gerade zu viele Anfragen, bitte später erneut.",refused:"Claude hat die Anfrage abgelehnt.",prompt_too_large:"Die Notiz ist zu lang für einen Vorschlag."}; if(!(err&&err.code==="cancelled")) toast(m[err&&err.code]||"Vorschlag fehlgeschlagen."); if(err&&err.code==="not_granted") S.sample=null; }
+    sb.disabled=false; sb.textContent=old;
+  }; }
+  if(w){ $("#saveNotiz").onclick = async ()=>{
+    const f=formData("#fNotiz"); if(!f.text){ toast("Bitte einen Notiztext eingeben."); return; }
+    Object.assign(n,f); delete n.id;
+    if(!id){ n.when=new Date().toISOString(); n.who=S.meId||""; } else n.updatedAt=new Date().toISOString();
+    const docId = id || S.db.collection("notizen").doc().id;
+    await write("notizen", docId, n); closeModal(); toast(id?"Notiz gespeichert":"Notiz erfasst");
+  }; }
+  wireDelete(async()=>{ await remove("notizen",id); closeModal(); toast("Notiz gelöscht"); });
+}
+
+// ---------- Ansicht: Forschungsdatenbank (Reiter) ----------
+function fdbSubnav(r){
+  const items = [["fdb","Übersicht"],["proben","Proben"],["analysen","Analysen"],["labore","Labore"],["auswertung","KI-Auswertung"]];
+  return '<div class="subnav">'+items.map(it=>'<a href="#'+it[0]+'" class="subtab'+(r===it[0]?" on":"")+'">'+it[1]+'</a>').join("")+'</div>';
+}
+function vFdb(){
+  const cards = [
+    ["#proben","Proben",S.proben.length,"Alle Proben mit Herkunft, Laboraufträgen und Ergebnissen","var(--s3)"],
+    ["#analysen","Analysen",S.analysen.length,"Analysenkatalog mit Methode, Norm, Labor und Preis","var(--s1)"],
+    ["#labore","Labore",S.labore.length,"Eigenlabor und Fremdlabore mit Kontakt","var(--s2)"],
+    ["#auswertung","KI-Auswertung",S.auswertungen.length,"Ergebnisse eines Sets mit Claude auswerten","var(--s4)"]
+  ];
+  let h = '<div class="head"><div><h2>Forschungsdatenbank</h2><div class="lede">Die Forschung der ReSoilution GmbH an einem Ort: Proben, Analysen, Labore und die Auswertung der Ergebnisse.</div></div></div>';
+  h += '<div class="proj">'+cards.map(c=>'<a class="pcard" style="--sc:'+c[4]+';text-decoration:none;color:inherit;display:block" href="'+c[0]+'"><span class="mono" style="color:var(--muted)">'+c[2]+'</span><h3>'+esc(c[1])+'</h3><p>'+esc(c[3])+'</p></a>').join("")+'</div>';
+  return h;
+}
+
+// ---------- Ansicht: Kunden ----------
+const kunde = id => byId(S.kunden,id);
+function vKunden(){
+  let h = '<div class="head"><div><h2>Kunden</h2><div class="lede">Alle Kunden der ReSoilution GmbH mit Standort, Adresse und Ansprechpartner.</div></div><div class="actions">'+(canW()?'<button class="btn" data-act="newKunde">Kunde anlegen</button>':'')+'</div></div>';
+  h += '<div class="toolbar"><input id="kq" type="search" placeholder="Suche Name, Ort, Ansprechpartner …" value="'+esc(S.kFilter.q||"")+'" aria-label="Kunden suchen">'
+    + '<select id="kland" aria-label="Land"><option value="">Alle Länder</option>'+[...new Set(S.kunden.map(k=>k.land).filter(Boolean))].sort().map(x=>'<option '+(S.kFilter.land===x?"selected":"")+'>'+esc(x)+'</option>').join("")+'</select></div>';
+  if(!S.kunden.length) return h + '<div class="panel empty"><b>Noch keine Kunden</b>'+(S.loaded.kunden?'Lege den ersten Kunden an. Danach lässt er sich den Projekten zuordnen.':'Daten werden geladen …')+'</div>';
+  const q=(S.kFilter.q||"").trim().toLowerCase();
+  const list = S.kunden.filter(k=>(!S.kFilter.land||k.land===S.kFilter.land) && (!q || [k.name,k.standort,k.ort,k.strasse,k.land,k.ansprechpartner,k.branche].join(" ").toLowerCase().includes(q))).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  if(!list.length) return h + '<div class="panel empty">Kein Kunde passt zur Suche.</div>';
+  h += '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Standort</th><th>Adresse</th><th>Land</th><th>Ansprechpartner</th><th>Branche</th></tr></thead><tbody>';
+  list.forEach(k=>{ h += '<tr class="click" data-kunde="'+esc(k.id)+'" tabindex="0"><td><b>'+esc(k.name)+'</b></td><td>'+esc(k.standort||"–")+'</td><td>'+esc(adr(k)||"–")+'</td><td>'+esc(k.land||"–")+'</td><td>'+esc(k.ansprechpartner||"–")+(k.telefon?'<span class="sub">'+esc(k.telefon)+'</span>':'')+'</td><td>'+esc(k.branche||"–")+'</td></tr>'; });
+  return h + '</tbody></table></div>';
+}
+function showKunde(id){
+  const k = kunde(id); if(!k){ closeModal(); return; }
+  let h = '<div class="mh"><div><span class="lab-tag">Kunde</span><h3>'+esc(k.name)+'</h3></div><button class="xbtn" data-close aria-label="Schließen">×</button></div>';
+  h += '<div class="tw"><table class="t"><tbody>'+row("Standort",esc(k.standort||"–"))+row("Adresse",esc(adr(k)||"–"))+row("Land",esc(k.land||"–"))+row("Branche",esc(k.branche||"–"))+row("Ansprechpartner",esc(k.ansprechpartner||"–"))+row("Telefon",esc(k.telefon||"–"))+row("E-Mail",esc(k.email||"–"))+(k.notiz?row("Notiz",esc(k.notiz).replace(/\n/g,"<br>")):"")+'</tbody></table></div>';
+  h += notesBlock("kunden", k);
+  h += '<div class="mf">'+(canW()?'<button class="btn ghost" data-editkunde="'+esc(id)+'">Bearbeiten</button>':'')+'<button class="btn" data-close>Schließen</button></div>';
+  openModal(h, ()=>showKunde(id));
+}
+function editKunde(id){
+  const k = id? clone(kunde(id)) : {land:"Deutschland"};
+  let h = '<div class="mh"><h3>'+(id?"Kunde bearbeiten":"Kunde anlegen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fKunde" class="form">'
+    + fld("name","Name / Firma",k.name,"full",true)
+    + fld("standort","Standort",k.standort,"","z.B. Zentrale, Golfplatz, Werk")
+    + fld("branche","Branche",k.branche,"","z.B. Golfplatz, Garten- und Landschaftsbau")
+    + fld("strasse","Straße und Hausnummer",k.strasse,"full")
+    + fld("plz","PLZ",k.plz) + fld("ort","Ort",k.ort)
+    + fld("land","Land",k.land) + fld("ansprechpartner","Ansprechpartner",k.ansprechpartner)
+    + fld("telefon","Telefon",k.telefon) + fld("email","E-Mail",k.email,"","","email")
+    + area("notiz","Notiz",k.notiz)
+    + '</form><div class="mf">'+(id?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Kunde löschen</button></span>':'')+'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveKunde">Speichern</button></div>';
+  openModal(h);
+  $("#saveKunde").onclick = async ()=>{ const f=formData("#fKunde"); if(!f.name){ toast("Bitte einen Namen angeben."); return; } Object.assign(k,f); delete k.id; const docId=id||S.db.collection("kunden").doc().id; await write("kunden",docId,k); toast("Kunde gespeichert"); showKunde(docId); };
+  wireDelete(async()=>{ await remove("kunden",id); closeModal(); toast("Kunde gelöscht"); });
+}
+
+// ---------- Ansicht: Produkte ----------
+const produkt = id => byId(S.produkte,id);
+const PROD_STATUS = [["in Entwicklung","p-s2"],["in Erprobung","p-warn"],["am Markt","p-s1"],["eingestellt","p-mute"]];
+function vProdukte(){
+  let h = '<div class="head"><div><h2>Produkte</h2><div class="lede">Die Produkte der ReSoilution GmbH: Bodenhilfsstoffe und Lösungen zur Schadstoffbindung mit Status und Beschreibung.</div></div><div class="actions">'+(canW()?'<button class="btn" data-act="newProdukt">Produkt anlegen</button>':'')+'</div></div>';
+  h += '<div class="toolbar"><input id="pq" type="search" placeholder="Suche Name, Kategorie …" value="'+esc(S.pFilter.q||"")+'" aria-label="Produkte suchen"></div>';
+  if(!S.produkte.length) return h + '<div class="panel empty"><b>Noch keine Produkte</b>'+(S.loaded.produkte?'Lege das erste Produkt an.':'Daten werden geladen …')+'</div>';
+  const q=(S.pFilter.q||"").trim().toLowerCase();
+  const list = S.produkte.filter(p=>(!q || [p.name,p.kategorie,p.beschreibung,p.kurz].join(" ").toLowerCase().includes(q))).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  if(!list.length) return h + '<div class="panel empty">Kein Produkt passt zur Suche.</div>';
+  h += '<div class="ana-list">';
+  list.forEach(p=>{ h += '<button class="acard" data-produkt="'+esc(p.id)+'">'+pill(p.status,PROD_STATUS)+'<b style="margin-top:6px">'+esc(p.name)+'</b>'+(p.kategorie?'<code>'+esc(p.kategorie)+'</code>':'')+'<span class="sub">'+esc((p.beschreibung||"").slice(0,120))+((p.beschreibung||"").length>120?" …":"")+'</span></button>'; });
+  return h + '</div>';
+}
+function showProdukt(id){
+  const p = produkt(id); if(!p){ closeModal(); return; }
+  let h = '<div class="mh"><div><span class="lab-tag">Produkt</span> '+pill(p.status,PROD_STATUS)+'<h3>'+esc(p.name)+'</h3></div><button class="xbtn" data-close aria-label="Schließen">×</button></div>';
+  h += '<div class="tw"><table class="t"><tbody>'+row("Kategorie",esc(p.kategorie||"–"))+row("Einheit / Gebinde",esc(p.einheit||"–"))+row("Status",esc(p.status||"–"))+(p.inhaltsstoffe?row("Inhaltsstoffe / Basis",esc(p.inhaltsstoffe)):"")+'</tbody></table></div>';
+  h += '<div class="detail"><h4>Beschreibung</h4><p>'+esc(p.beschreibung||"noch nicht beschrieben")+'</p>'+(p.anwendung?'<h4>Anwendung</h4><p>'+esc(p.anwendung)+'</p>':'')+'</div>';
+  h += notesBlock("produkte", p);
+  h += '<div class="mf">'+(canW()?'<button class="btn ghost" data-editprodukt="'+esc(id)+'">Bearbeiten</button>':'')+'<button class="btn" data-close>Schließen</button></div>';
+  openModal(h, ()=>showProdukt(id));
+}
+function editProdukt(id){
+  const p = id? clone(produkt(id)) : {status:"in Entwicklung"};
+  let h = '<div class="mh"><h3>'+(id?"Produkt bearbeiten":"Produkt anlegen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fProd" class="form">'
+    + fld("name","Name",p.name,"full",true)
+    + fld("kategorie","Kategorie",p.kategorie,"","z.B. Bodenhilfsstoff, Schadstoffbindung")
+    + sel("status","Status",PROD_STATUS.map(x=>x[0]),p.status)
+    + fld("einheit","Einheit / Gebinde",p.einheit,"","z.B. Sack 25 kg, BigBag")
+    + fld("inhaltsstoffe","Inhaltsstoffe / Basis",p.inhaltsstoffe,"full")
+    + area("beschreibung","Beschreibung",p.beschreibung) + area("anwendung","Anwendung",p.anwendung)
+    + '</form><div class="mf">'+(id?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Produkt löschen</button></span>':'')+'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveProd">Speichern</button></div>';
+  openModal(h);
+  $("#saveProd").onclick = async ()=>{ const f=formData("#fProd"); if(!f.name){ toast("Bitte einen Namen angeben."); return; } Object.assign(p,f); delete p.id; const docId=id||S.db.collection("produkte").doc().id; await write("produkte",docId,p); toast("Produkt gespeichert"); showProdukt(docId); };
+  wireDelete(async()=>{ await remove("produkte",id); closeModal(); toast("Produkt gelöscht"); });
+}
+
+// ---------- Formular-Helfer ----------
+function fld(name,label,val,cls,req,type){ const ph = (typeof req==="string")? req : ""; return '<div class="f '+(cls||"")+'"><label for="i-'+name+'">'+label+'</label><input id="i-'+name+'" name="'+name+'" type="'+(type||"text")+'" value="'+esc(val==null?"":val)+'" '+(req===true?"required":"")+' placeholder="'+esc(ph)+'"></div>'; }
+function area(name,label,val,cls){ return '<div class="f '+(cls===undefined?"full":cls)+'"><label for="i-'+name+'">'+label+'</label><textarea id="i-'+name+'" name="'+name+'">'+esc(val||"")+'</textarea></div>'; }
+function sel(name,label,opts,val,blank){ return '<div class="f"><label for="i-'+name+'">'+label+'</label><select id="i-'+name+'" name="'+name+'">'+(blank?'<option value="">— wählen —</option>':'')+opts.map(o=>'<option '+(o===val?"selected":"")+'>'+esc(o)+'</option>').join("")+'</select></div>'; }
+function formData(sel){ const o={}; new FormData(document.querySelector(sel)).forEach((v,k)=>{ if(k!=="an") o[k]=String(v).trim(); }); return o; }
+
+let modalRerender = null;
+function openModal(html, rerender){ modalRerender = rerender||null; $("#modalRoot").innerHTML = '<div class="modal-bg" id="mbg"><div class="modal" role="dialog" aria-modal="true">'+html+'</div></div>'; const f=document.querySelector("#modalRoot .modal input, #modalRoot .modal select, #modalRoot .modal textarea, #modalRoot .modal button"); }
+function closeModal(){ $("#modalRoot").innerHTML=""; modalRerender=null; }
+function wireDelete(fn){ const w=document.querySelector("#delWrap"); if(!w) return; w.querySelector("[data-askdel]").onclick=()=>{ w.innerHTML='<span class="confirm">Wirklich löschen? <button class="btn danger sm" id="yesDel">Ja, löschen</button><button class="btn ghost sm" id="noDel">Nein</button></span>'; $("#yesDel").onclick=fn; $("#noDel").onclick=()=>{ w.innerHTML='<button class="btn danger sm" data-askdel>Löschen</button>'; wireDelete(fn); }; }; }
+
+// Live-Aktualisierung offener Detailfenster, ohne Eingaben zu verlieren
+const _render = render;
+render = function(){ _render(); if(modalRerender){ const m=$("#modalRoot"); const busy = m.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.value; if(!busy){ const st=document.querySelector("#mbg")?.scrollTop||0; modalRerender(); const b=document.querySelector("#mbg"); if(b) b.scrollTop=st; } } };
+
+// ---------- Ereignisse ----------
+document.addEventListener("click", async e=>{
+  const t = e.target.closest("[data-act],[data-lief],[data-editlief],[data-kunde],[data-editkunde],[data-produkt],[data-editprodukt],[data-probe],[data-projekt],[data-notiz],[data-kpi],[data-ana],[data-close],[data-editset],[data-editprojekt],[data-editana],[data-editlab],[data-addnote],#kiRun,#kiStop,#kiSave,#kiRegelnSave");
+  if(e.target.id==="mbg"){ closeModal(); return; }
+  if(!t) return;
+  if(t.hasAttribute("data-close")){ closeModal(); return; }
+  if(t.hasAttribute("data-kpi")){ if(t.dataset.navstatus!==undefined) S.filter.status=t.dataset.navstatus; return; }
+  const act=t.dataset.act;
+  if(act==="newProbe") return editProbe(null, S.filter.projekt? {projektId:S.filter.projekt} : null);
+  if(act==="newNotiz") return editNotiz(null);
+  if(act==="newProjekt") return editProjekt(null);
+  if(act==="newLieferant") return editLieferant(null);
+  if(act==="newKunde") return editKunde(null);
+  if(act==="newProdukt") return editProdukt(null);
+  if(act==="newProbeFrom") return editProbe(null, {lieferantId:t.dataset.lid});
+  if(t.dataset.editlief) return editLieferant(t.dataset.editlief);
+  if(t.dataset.lief){ e.preventDefault(); return showLieferant(t.dataset.lief); }
+  if(t.dataset.editkunde) return editKunde(t.dataset.editkunde);
+  if(t.dataset.kunde) return showKunde(t.dataset.kunde);
+  if(t.dataset.editprodukt) return editProdukt(t.dataset.editprodukt);
+  if(t.dataset.produkt) return showProdukt(t.dataset.produkt);
+  if(act==="newAnalyse") return editAnalyse(null);
+  if(act==="newLabor") return editLabor(null);
+  if(t.dataset.probe) return showProbe(t.dataset.probe);
+  if(t.dataset.projekt) return showProjekt(t.dataset.projekt);
+  if(t.dataset.notiz) return editNotiz(t.dataset.notiz);
+  if(t.dataset.ana) return showAnalyse(t.dataset.ana);
+  if(t.dataset.editset!==undefined) return editSet(t.dataset.pid, t.dataset.editset);
+  if(t.dataset.editprojekt) return editProjekt(t.dataset.editprojekt);
+  if(t.dataset.editana) return editAnalyse(t.dataset.editana);
+  if(t.dataset.editlab) return editLabor(t.dataset.editlab);
+  if(t.dataset.addnote){ const txt=$("#noteTxt").value.trim(); if(!txt) return; const col=t.dataset.addnote, id=t.dataset.doc; const src=byId(S[col],id); const d=clone(src); delete d.id; d.notizen=d.notizen||[]; d.notizen.push({when:new Date().toISOString(), who:S.meId||"", text:txt}); $("#noteTxt").value=""; await write(col,id,d); toast("Notiz gespeichert"); return; }
+  if(t.id==="kiRegelnSave"){ await write("einstellungen","ki",{regeln:$("#kiRegeln").value}); toast("Regeln gespeichert"); return; }
+  if(t.id==="kiStop"){ S.kiCtl&&S.kiCtl.abort(); return; }
+  if(t.id==="kiSave"){ const id=S.db.collection("auswertungen").doc().id; await write("auswertungen",id,{projektId:S.kiSel.projekt, setId:S.kiSel.set, when:new Date().toISOString(), who:S.meId||"", text:S.kiText}); S.kiText=""; render(); toast("Auswertung gespeichert"); return; }
+  if(t.id==="kiRun"){
+    const p=proj(S.kiSel.projekt), s=setOf(p,S.kiSel.set), m=resultMatrix(p.id, s?s.id:"");
+    S.kiBusy=true; S.kiText=""; S.kiCtl=new AbortController(); render();
+    try { const r = await S.sample(buildPrompt(p,s,m), {signal:S.kiCtl.signal, modelTier:"complex", cache:false, onText:({text})=>{ S.kiText=text; const o=$("#kiOut"); if(o) o.textContent=text; }}); S.kiText=r.text+(r.truncated?"\n\n[Die Antwort wurde gekürzt. Bitte ein einzelnes Set auswerten.]":""); }
+    catch(err){ S.kiText = err&&err.text? err.text : ""; const m2={not_granted:"Die KI-Auswertung wurde nicht freigegeben.",rate_limited:"Gerade zu viele Anfragen. Bitte später erneut versuchen.",prompt_too_large:"Zu viele Daten auf einmal. Bitte ein einzelnes Set wählen.",refused:"Claude hat die Anfrage abgelehnt."}; if(!(err&&err.code==="cancelled")) toast(m2[err&&err.code]||"Die Auswertung ist fehlgeschlagen."); if(err&&err.code==="not_granted") S.sample=null; }
+    S.kiBusy=false; render(); return;
+  }
+});
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && $("#modalRoot").innerHTML) closeModal(); if(e.key==="Enter" && e.target.matches && e.target.matches("tr.click,.chip[data-ana],a[data-lief]")) e.target.click(); });
+document.addEventListener("input", e=>{ if(e.target.id==="fq"){ S.filter.q=e.target.value; render(); } if(e.target.id==="lq"){ S.filter.lq=e.target.value; render(); } if(e.target.id==="kq"){ S.kFilter.q=e.target.value; render(); } if(e.target.id==="pq"){ S.pFilter.q=e.target.value; render(); } });
+document.addEventListener("change", e=>{
+  const id=e.target.id;
+  if(id==="fprojekt"){ S.filter.projekt=e.target.value; render(); }
+  if(id==="fstatus"){ S.filter.status=e.target.value; render(); }
+  if(id==="flabor"){ S.filter.labor=e.target.value; render(); }
+  if(id==="lland"){ S.filter.lland=e.target.value; render(); }
+  if(id==="kland"){ S.kFilter.land=e.target.value; render(); }
+  if(id==="aProjekt"){ S.aFilter.projekt=e.target.value; render(); }
+  if(id==="aKat"){ S.aFilter.kategorie=e.target.value; render(); }
+  if(id==="kiP"){ S.kiSel.projekt=e.target.value; S.kiSel.set=""; S.kiText=""; render(); }
+  if(id==="kiS"){ S.kiSel.set=e.target.value; S.kiText=""; render(); }
+});
+
+boot();
+})();
+</script>
+
+</body>
+</html>
