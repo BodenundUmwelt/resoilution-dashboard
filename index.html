@@ -401,8 +401,8 @@ function vOnboarding(){
    .ob-info-box{margin:2px 8px 8px 44px;padding:10px 14px;border-left:3px solid var(--s1);background:var(--s1-soft);border-radius:0 8px 8px 0;font-size:.86rem;color:var(--fg);line-height:1.5}
    .ob-info-box b{color:var(--s1)}
   </style>
-  <div class="head"><div><h2>Onboarding</h2><div class="lede">Schritt für Schritt in die wissenschaftliche Leitung von reSoilution. Hak ab, was erledigt ist. Die Haken bleiben in deinem Browser gespeichert.</div></div></div>
-  <div class="ob-callout"><b>Zuerst die Zugänge</b><p>Bevor es inhaltlich losgeht, brauchst du den Login für das Gutachtensystem, die Freigabe für die Forschungsdatenbank und die Freigabe für die Übersicht der Untersuchungen. Diese drei Punkte stehen in Phase 1.</p></div>
+  <div class="head"><div><h2>Onboarding</h2><div class="lede">Schritt für Schritt in die wissenschaftliche Leitung von reSoilution.</div></div></div>
+  <div class="ob-callout"><b>Dein Fahrplan</b><p>Im Dezember bist du einen halben Tag im Greenkeeper-Unterricht dabei, im Februar die erste Woche komplett im Labor. Danach testen wir die Wasseraufnahme der ersten Produkte und bauen die Mischungsreihen auf. Die Zugänge brauchst du schon vorher, sie stehen ganz oben. Hak ab, was erledigt ist, die Haken bleiben in deinem Browser gespeichert.</p></div>
 
   <div class="grid2">
     <div class="panel ob-panel">
@@ -420,49 +420,53 @@ function vOnboarding(){
     </div>
   </div>
 
+  <div class="panel ob-panel" style="margin-top:22px">
+    <div class="ob-phead"><div class="ob-k">Zum Start</div><span class="ob-pill">Zugänge</span></div>
+    <h3>Bevor es losgeht</h3>
+    <div class="ob-tasks">
+      ${task('za','Login für das Gutachtensystem bekommen und einloggen','Diesen Zugang richten dir <b>Selina oder Philipp</b> ein. Sprich sie einfach direkt an.')}
+      ${task('zb','Freigabe für Forschungsdatenbank und Untersuchungs-Übersicht erhalten','Die Freigabe bekommst du von <b>Selina oder Philipp</b>. Frag kurz bei ihnen nach.')}
+      ${task('zc','reSoilution-E-Mail-Adresse einrichten lassen','Deine reSoilution-Adresse legen dir <b>Selina oder Philipp</b> an. Sag ihnen Bescheid.')}
+      ${task('zd','Die <a href="'+A+'12pX36jEA4J4kePfYEJwo7" target="_blank" rel="noopener">Perspektiven-Übersicht</a> lesen, damit du das große Ganze kennst')}
+    </div>
+  </div>
+
   <div class="grid2" style="margin-top:22px">
     <div class="panel ob-panel">
-      <div class="ob-phead"><div class="ob-k">Phase 1</div><span class="ob-pill">Tag 1</span></div>
-      <h3>Ankommen und Zugänge</h3>
+      <div class="ob-phead"><div class="ob-k">Phase 1</div><span class="ob-pill">Dezember 2026</span></div>
+      <h3>Greenkeeper-Unterricht</h3>
       <div class="ob-tasks">
-        ${task('p1a','Die <a href="'+A+'12pX36jEA4J4kePfYEJwo7" target="_blank" rel="noopener">Perspektiven-Übersicht</a> lesen')}
-        ${task('p1b','Login für das Gutachtensystem von Selina bekommen und einloggen','Diesen Zugang richten dir <b>Selina oder Philipp</b> ein. Sprich sie einfach direkt an.')}
-        ${task('p1c','Freigabe für Forschungsdatenbank und Untersuchungs-Übersicht erhalten','Die Freigabe bekommst du von <b>Selina oder Philipp</b>. Frag kurz bei ihnen nach.')}
-        ${task('p1d','reSoilution-E-Mail-Adresse einrichten lassen','Deine reSoilution-Adresse legen dir <b>Selina oder Philipp</b> an. Sag ihnen Bescheid.')}
-        ${task('p1e','Dieses Onboarding als roten Faden nehmen')}
+        ${task('g1','Einen halben Tag im Greenkeeper-Unterricht bei Selina dabei sein','Du läufst im laufenden Kurs mit und bekommst ein erstes Gefühl dafür, womit wir im Labor arbeiten.')}
+        ${task('g2','Verstehen, was eine Rasentragschicht ist und welche Rolle sie beim Golfplatz spielt')}
+        ${task('g3','Die wichtigsten Parameter einer Rasentragschicht kennenlernen')}
       </div>
     </div>
     <div class="panel ob-panel">
-      <div class="ob-phead"><div class="ob-k">Phase 2</div><span class="ob-pill">Woche 1</span></div>
-      <h3>Überblick verschaffen</h3>
+      <div class="ob-phead"><div class="ob-k">Phase 2</div><span class="ob-pill">Februar 2027, Woche 1</span></div>
+      <h3>Komplett im Labor</h3>
       <div class="ob-tasks">
-        ${task('p2a','Die <a href="#fdb">Forschungsdatenbank</a> durchgehen: Proben, Projekte und Lieferanten','Verschaff dir hier erst in Ruhe einen Überblick über Proben, Projekte und Lieferanten. Wenn du durch bist, telefonieren wir in Ruhe darüber.')}
-        ${task('p2b','Verstehen, wie jede Probe einem Projekt und einem Lieferanten zugeordnet ist','So ist es bei uns aufgebaut. Wir legen zuerst die <b>Lieferanten</b> an und erfassen zu jedem Lieferanten direkt seine Proben. Öffne dazu einen Lieferanten und nimm „Probe von diesem Lieferanten erfassen". Im Moment geht es vor allem darum, erst unsere Lieferanten anzulegen und dann dazu die Proben.')}
-        ${task('p2c','Das <a href="'+A+'T7omcHMbnEfGsZnh6MVWKc" target="_blank" rel="noopener">Untersuchungsprogramm</a> lesen, Steps 1 bis 4')}
-        ${task('p2d','Die Wasserkapazitäts-Forschung in Schritt 3 im Detail nachvollziehen')}
-        ${task('p2e','Labore und Ansprechpartner kennenlernen, besonders Sven')}
+        ${task('l1','Mit Selina einen kleinen Proctor-Versuch aufbauen','Der Proctor-Versuch zeigt, bei welcher Einbaufeuchte ein Substrat am dichtesten wird. Für uns die Grundlage, um Rasentragschichten richtig einzuordnen.')}
+        ${task('l2','Die Laborauswertung direkt im Tool erfassen, damit der ganze Durchlauf einmal sitzt','Wir gehen den Weg von der Probe bis zum Ergebnis einmal komplett im Tool durch, damit du das Erfassen und Auswerten sicher beherrschst.')}
+        ${task('l3','Die Wasserdurchlässigkeit verschiedener Proben im Labor bestimmen')}
+        ${task('l4','Die Wasserkapazität verschiedener Proben im Labor bestimmen')}
+        ${task('l5','Am Freitag am Kurs zur bodenkundlichen Baubegleitung teilnehmen')}
       </div>
     </div>
     <div class="panel ob-panel">
-      <div class="ob-phead"><div class="ob-k">Phase 3</div><span class="ob-pill">Woche 2 bis 4</span></div>
-      <h3>Forschung übernehmen</h3>
+      <div class="ob-phead"><div class="ob-k">Phase 3</div><span class="ob-pill">danach</span></div>
+      <h3>Wasseraufnahme der ersten Produkte</h3>
       <div class="ob-tasks">
-        ${task('p3a','Offene Entscheidungen in Schritt 3 treffen: Dosierungsbasis und Wiederholungen')}
-        ${task('p3b','Die genaue Probenzahl ableiten und die Proben planen')}
-        ${task('p3c','Analysen beauftragen und Ergebnisse in der Forschungsdatenbank dokumentieren')}
-        ${task('p3d','Den Probenüberblick aufbauen: wann, wo und wie viele Proben mit welchem Ergebnis')}
-        ${task('p3e','Lieferanten und Forschungsgelder in den Überblick nehmen')}
+        ${task('w1','Die zwei aktuell passenden Produkte erfassen und zuordnen: eine Zeolith- und eine Diatomit-Probe','Welche Zeolith- und welche Diatomit-Probe es genau wird, steht noch nicht fest. Sobald es klar ist, legen wir sie als Proben an und ordnen sie einem Lieferanten zu. Öffne dazu den Lieferanten und nimm „Probe von diesem Lieferanten erfassen".')}
+        ${task('w2','Die Wasseraufnahme der beiden Produkte testen')}
       </div>
     </div>
     <div class="panel ob-panel">
-      <div class="ob-phead"><div class="ob-k">Phase 4</div><span class="ob-pill">ab Monat 2</span></div>
-      <h3>Ausbauen und mitgestalten</h3>
+      <div class="ob-phead"><div class="ob-k">Phase 4</div><span class="ob-pill">im Anschluss</span></div>
+      <h3>Mischungen und Literatur</h3>
       <div class="ob-tasks">
-        ${task('p4a','CE-Kennzeichnung starten: PFC- und CMC-Einordnung für Diatomit und Zeolith (Anhang I und II)')}
-        ${task('p4b','Je Produkt entscheiden: nationaler Weg (DüMV 2012) oder EU-Weg mit CE')}
-        ${task('p4c','Methodik und Qualitätssicherung vereinheitlichen')}
-        ${task('p4d','Erste Fördermöglichkeiten und Veröffentlichungen sichten')}
-        ${task('p4e','In ruhigen Phasen bei Boden und Umwelt reinschnuppern, etwa ins Biotop-Monitoring')}
+        ${task('m1','Die Mischungsreihen aus dem <a href="'+A+'T7omcHMbnEfGsZnh6MVWKc" target="_blank" rel="noopener">Untersuchungsprogramm</a> ansetzen: 5 %, 10 % und weiter','Das sind die Mischungen aus Schritt 3 der Wasserkapazitäts-Forschung: Diatomit und Zeolith zu 5, 10 und 15 Prozent.')}
+        ${task('m2','Die Ergebnisse laufend in der <a href="#fdb">Forschungsdatenbank</a> dokumentieren')}
+        ${task('m3','Die Literaturrecherche zu Wasserkapazität und Bodenhilfsstoffen aufbauen')}
       </div>
     </div>
   </div>
