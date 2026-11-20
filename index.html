@@ -191,6 +191,8 @@
       <a href="#kunden" data-r="kunden">Kunden <span class="cnt" id="c-kunden"></span></a>
       <a href="#lieferanten" data-r="lieferanten">Lieferanten <span class="cnt" id="c-lieferanten"></span></a>
       <a href="#produkte" data-r="produkte">Produkte <span class="cnt" id="c-produkte"></span></a>
+      <a href="#angebote" data-r="angebote">Angebote <span class="cnt" id="c-angebote"></span></a>
+      <a href="#rechnungen" data-r="rechnungen">Rechnungen <span class="cnt" id="c-rechnungen"></span></a>
       <a href="#fdb" data-r="fdb">Forschungsdatenbank</a>
       <a href="#assistent" data-r="assistent">Assistent</a>
       <a href="#onboarding" data-r="onboarding">Onboarding</a>
@@ -223,7 +225,7 @@ const MATERIAL = ["Grundsubstrat","Zuschlagstoff","Mischung / Behandlungsvariant
 const SET_COLORS = ["s1","s2","s3","s4"];
 
 const TEAM_DEFAULT = ["Selina","Nadi","Paul","Vitus","Philipp","Harry","Sven"];
-const S = { projekte:[], proben:[], lieferanten:[], analysen:[], labore:[], auswertungen:[], notizen:[], kunden:[], produkte:[], ki:{regeln:""}, team:TEAM_DEFAULT.slice(),
+const S = { projekte:[], proben:[], lieferanten:[], analysen:[], labore:[], auswertungen:[], notizen:[], kunden:[], produkte:[], angebote:[], rechnungen:[], firma:null, angFilter:{q:"",status:""}, rechFilter:{q:"",status:""}, ki:{regeln:""}, team:TEAM_DEFAULT.slice(),
   meId:null, canWrite:null, readOnly:false, assets:null, sample:null, user:null, db:null,
   loaded:{}, filter:{q:"",projekt:"",status:"",labor:""}, kFilter:{q:"",land:""}, pFilter:{q:""}, aFilter:{projekt:"",kategorie:""}, kiSel:{projekt:"",set:""}, kiBusy:false, kiText:"", kiCtl:null };
 
@@ -310,7 +312,9 @@ async function boot(){
       subscribe("notizen","notizen");
       subscribe("kunden","kunden");
       subscribe("produkte","produkte");
-      db.collection("einstellungen").onSnapshot(snap=>{ const d=snap.docs.find(x=>x.id==="ki"); S.ki = d? clone(d.data()) : {regeln:""}; const t=snap.docs.find(x=>x.id==="team"); const tm=t&&t.data().mitglieder; S.team = Array.isArray(tm)&&tm.length? tm.slice() : TEAM_DEFAULT.slice(); S.loaded.ki=true; render(); }, ()=>{});
+      subscribe("angebote","angebote");
+      subscribe("rechnungen","rechnungen");
+      db.collection("einstellungen").onSnapshot(snap=>{ const d=snap.docs.find(x=>x.id==="ki"); S.ki = d? clone(d.data()) : {regeln:""}; const t=snap.docs.find(x=>x.id==="team"); const tm=t&&t.data().mitglieder; S.team = Array.isArray(tm)&&tm.length? tm.slice() : TEAM_DEFAULT.slice(); const fr=snap.docs.find(x=>x.id==="firma"); S.firma = fr? fr.data() : null; S.loaded.ki=true; render(); }, ()=>{});
     }
     clearTimeout(slow); S.slow=false;
   } catch(e){ clearTimeout(slow); }
@@ -318,7 +322,7 @@ async function boot(){
 }
 
 // ---------- Routing ----------
-const ROUTES = ["uebersicht","projekte","kunden","lieferanten","produkte","fdb","proben","analysen","labore","auswertung","assistent","onboarding","postfach"];
+const ROUTES = ["uebersicht","projekte","kunden","lieferanten","produkte","angebote","rechnungen","fdb","proben","analysen","labore","auswertung","assistent","onboarding","postfach"];
 const route = () => { const h=(location.hash||"").slice(1); return ROUTES.includes(h)? h : "uebersicht"; };
 window.addEventListener("hashchange", ()=>{ render(); window.scrollTo(0,0); });
 document.addEventListener("change", e=>{
@@ -342,11 +346,11 @@ function render(){
   const r = route();
   const activeNav = FDB_GROUP.includes(r)? "fdb" : r;
   document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on", a.dataset.r===activeNav));
-  const cnt = {projekte:S.projekte.length, kunden:S.kunden.length, lieferanten:S.lieferanten.length, produkte:S.produkte.length};
+  const cnt = {projekte:S.projekte.length, kunden:S.kunden.length, lieferanten:S.lieferanten.length, produkte:S.produkte.length, angebote:S.angebote.length, rechnungen:S.rechnungen.length};
   for(const k in cnt){ const el=$("#c-"+k); if(el) el.textContent = cnt[k]||""; }
   const v=$("#view");
   const ae=document.activeElement; const keep = ae && ae.id && v.contains(ae) ? {id:ae.id, pos: (()=>{try{return ae.selectionStart}catch(e){return null}})()} : null;
-  const view = ({uebersicht:vUebersicht, projekte:vProjekte, proben:vProben, lieferanten:vLieferanten, analysen:vAnalysen, labore:vLabore, auswertung:vAuswertung, assistent:vAssistent, kunden:vKunden, produkte:vProdukte, fdb:vFdb, onboarding:vOnboarding, postfach:vPostfach}[r])();
+  const view = ({uebersicht:vUebersicht, projekte:vProjekte, proben:vProben, lieferanten:vLieferanten, analysen:vAnalysen, labore:vLabore, auswertung:vAuswertung, assistent:vAssistent, kunden:vKunden, produkte:vProdukte, angebote:vAngebote, rechnungen:vRechnungen, fdb:vFdb, onboarding:vOnboarding, postfach:vPostfach}[r])();
   v.innerHTML = banner() + (FDB_GROUP.includes(r)? fdbSubnav(r) : "") + view;
   if(keep){ const el=document.getElementById(keep.id); if(el){ el.focus(); if(keep.pos!=null) try{el.setSelectionRange(keep.pos,keep.pos)}catch(e){} } }
 }
@@ -431,6 +435,20 @@ function vOnboarding(){
     </div>
   </div>
 
+  <div class="panel ob-panel" style="margin-top:22px;border-left:4px solid var(--s2)">
+    <div class="ob-phead"><div class="ob-k" style="color:var(--s2)">Schwerpunkt der wissenschaftlichen Leitung</div><span class="ob-pill" style="background:var(--s2-soft);color:var(--s2)">erster Baustein</span></div>
+    <h3>CE-Kennzeichnung der Produkte</h3>
+    <p class="ob-lead">Damit wir Diatomit und Zeolith europaweit als Düngeprodukt in Verkehr bringen dürfen, brauchen sie die CE-Kennzeichnung. Das ist von Anfang an eine der wichtigsten Aufgaben der wissenschaftlichen Leitung.</p>
+    <div class="ob-tasks">
+      ${task('ce1','Die beiden Produkte in die EU-Düngeprodukteverordnung (EU) 2019/1009 einordnen','Die Verordnung (EU) 2019/1009 gilt seit dem 16. Juli 2022 und hat die alte Verordnung (EG) 2003/2003 abgelöst. Sie regelt, wie Düngeprodukte die CE-Kennzeichnung bekommen und europaweit in Verkehr gebracht werden dürfen.')}
+      ${task('ce2','Die Produktfunktionskategorie bestimmen: anorganischer Bodenhilfsstoff (PFC 3(B)) ist noch zu prüfen','Ob Diatomit und Zeolith als anorganischer Bodenhilfsstoff (PFC 3(B)) gelten, müssen wir noch sauber prüfen. Diese Einordnung legt fest, welche Anforderungen und Grenzwerte gelten.')}
+      ${task('ce3','Die Komponentenmaterial-Kategorie (CMC) für Diatomit und Zeolith klären')}
+      ${task('ce4','Je Produkt entscheiden: nationaler Weg über die DüMV 2012 oder EU-Weg mit CE-Kennzeichnung','Nicht jedes Produkt muss den EU-Weg gehen. Der nationale Weg über die Düngemittelverordnung (DüMV) 2012 ist die Alternative. Das entscheiden wir je Produkt.')}
+      ${task('ce5','Das passende Konformitätsbewertungsverfahren festlegen und die Grenzwerte prüfen, besonders die Schwermetalle')}
+      ${task('ce6','Technische Dokumentation und EU-Konformitätserklärung vorbereiten')}
+    </div>
+  </div>
+
   <div class="grid2" style="margin-top:22px">
     <div class="panel ob-panel">
       <div class="ob-phead"><div class="ob-k">Phase 1</div><span class="ob-pill">Dezember 2026</span></div>
@@ -453,11 +471,11 @@ function vOnboarding(){
       </div>
     </div>
     <div class="panel ob-panel">
-      <div class="ob-phead"><div class="ob-k">Phase 3</div><span class="ob-pill">danach</span></div>
+      <div class="ob-phead"><div class="ob-k">Phase 3</div><span class="ob-pill" style="background:var(--warn-soft,var(--s1-soft));color:var(--warn,var(--s1))">läuft gerade</span></div>
       <h3>Wasseraufnahme der ersten Produkte</h3>
       <div class="ob-tasks">
         ${task('w1','Die zwei aktuell passenden Produkte erfassen und zuordnen: eine Zeolith- und eine Diatomit-Probe','Welche Zeolith- und welche Diatomit-Probe es genau wird, steht noch nicht fest. Sobald es klar ist, legen wir sie als Proben an und ordnen sie einem Lieferanten zu. Öffne dazu den Lieferanten und nimm „Probe von diesem Lieferanten erfassen".')}
-        ${task('w2','Die Wasseraufnahme der beiden Produkte testen')}
+        ${task('w2','Die Wasseraufnahme der beiden Produkte testen','Die beiden Proben sind bereits bei BoPHYS im Labor, beziehungsweise auf dem Weg dorthin. Die Wasseraufnahme wird dort gerade getestet.')}
       </div>
     </div>
     <div class="panel ob-panel">
@@ -814,8 +832,8 @@ function showLieferant(id){
   h += '<div class="mf">'+(canW()?'<button class="btn ghost" data-act="newProbeFrom" data-lid="'+esc(id)+'">Probe von diesem Lieferanten erfassen</button><button class="btn ghost" data-editlief="'+esc(id)+'">Bearbeiten</button>':'')+'<button class="btn" data-close>Schließen</button></div>';
   openModal(h, ()=>showLieferant(id));
 }
-function editLieferant(id){
-  const l = id? clone(lief(id)) : {land:"Deutschland"};
+function editLieferant(id, prefill){
+  const l = id? clone(lief(id)) : Object.assign({land:"Deutschland"}, prefill||{});
   let h = '<div class="mh"><h3>'+(id?"Lieferant bearbeiten":"Lieferant anlegen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fLief" class="form">'
     + fld("name","Name / Firma",l.name,"full",true)
     + fld("standort","Standort",l.standort,"","z.B. Werk Nord, Kiesgrube, Brauerei")
@@ -1065,6 +1083,15 @@ function showKunde(id){
   const k = kunde(id); if(!k){ closeModal(); return; }
   let h = '<div class="mh"><div><span class="lab-tag">Kunde</span><h3>'+esc(k.name)+'</h3></div><button class="xbtn" data-close aria-label="Schließen">×</button></div>';
   h += '<div class="tw"><table class="t"><tbody>'+row("Standort",esc(k.standort||"–"))+row("Adresse",esc(adr(k)||"–"))+row("Land",esc(k.land||"–"))+row("Branche",esc(k.branche||"–"))+row("Ansprechpartner",esc(k.ansprechpartner||"–"))+row("Telefon",esc(k.telefon||"–"))+row("E-Mail",esc(k.email||"–"))+(k.notiz?row("Notiz",esc(k.notiz).replace(/\n/g,"<br>")):"")+'</tbody></table></div>';
+  const kAng=(S.angebote||[]).filter(a=>a.kundeId===id).sort((a,b)=>(b.datum||"").localeCompare(a.datum||""));
+  const kRech=(S.rechnungen||[]).filter(r=>r.kundeId===id).sort((a,b)=>(b.datum||"").localeCompare(a.datum||""));
+  h += '<div style="margin:16px 0 4px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="lab-tag">Angebote & Rechnungen</span>'+(canW()?'<span><button class="btn ghost sm" data-newbeleg="angebot" data-kid="'+esc(id)+'">+ Angebot</button> <button class="btn ghost sm" data-newbeleg="rechnung" data-kid="'+esc(id)+'">+ Rechnung</button></span>':'')+'</div>';
+  if(kAng.length||kRech.length){
+    h += '<div class="tw"><table class="t"><thead><tr><th>Art</th><th>Nr.</th><th>Datum</th><th class="num">Brutto</th><th>Status</th></tr></thead><tbody>';
+    kAng.forEach(a=>{ h+='<tr class="click" data-openbeleg="'+esc(a.id)+'" data-typ="angebot" tabindex="0"><td>Angebot</td><td class="mono">'+esc(a.nr)+'</td><td>'+fmtD(a.datum)+'</td><td class="num">'+money(belegTotals(a).brutto)+'</td><td>'+pill(a.status,ANG_STATUS)+'</td></tr>'; });
+    kRech.forEach(r=>{ h+='<tr class="click" data-openbeleg="'+esc(r.id)+'" data-typ="rechnung" tabindex="0"><td>Rechnung</td><td class="mono">'+esc(r.nr)+'</td><td>'+fmtD(r.datum)+'</td><td class="num">'+money(belegTotals(r).brutto)+'</td><td>'+pill(r.status,RECH_STATUS)+'</td></tr>'; });
+    h += '</tbody></table></div>';
+  } else h += '<div class="empty" style="padding:14px">Noch keine Angebote oder Rechnungen für diesen Kunden.</div>';
   h += notesBlock("kunden", k);
   h += '<div class="mf">'+(canW()?'<button class="btn ghost" data-editkunde="'+esc(id)+'">Bearbeiten</button>':'')+'<button class="btn" data-close>Schließen</button></div>';
   openModal(h, ()=>showKunde(id));
@@ -1124,7 +1151,7 @@ async function pfSearch(){
 function pfFmt(d){ if(!d) return ""; const x=new Date(d); return isNaN(x)?"":x.toLocaleDateString("de-DE")+" "+x.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); }
 function vPostfach(){
   if(!PF.statusLoaded) pfInit();
-  let h = '<div class="head"><div><h2>Postfach</h2><div class="lede">Mails aus den Microsoft-365-Postfächern. Lesen, suchen und mit einem Klick einen Kunden aus der E-Mail-Signatur anlegen.</div></div></div>';
+  let h = '<div class="head"><div><h2>Postfach</h2><div class="lede">Mails aus den Microsoft-365-Postfächern. Lesen, suchen und mit einem Klick einen Kunden oder Lieferanten aus der E-Mail-Signatur anlegen.</div></div></div>';
   h += '<div class="toolbar">';
   h += '<select id="pfMbox" aria-label="Postfach">'+(PF.mailboxes.length? PF.mailboxes.map(m=>'<option value="'+esc(m)+'"'+(m===PF.mailbox?' selected':'')+'>'+esc(m)+'</option>').join("") : '<option>'+esc(PF.mailbox||"lädt …")+'</option>')+'</select>';
   h += '<input id="pfQ" type="search" placeholder="Im Postfach suchen …" value="'+esc(PF.q||"")+'" aria-label="Im Postfach suchen">';
@@ -1143,6 +1170,7 @@ function vPostfach(){
       + '<div class="pfVorschau">'+esc((m.vorschau||"").slice(0,220))+'</div>'
       + '<div class="pfActions">'
       + (canW()? '<button class="btn sm" data-pfkunde="'+esc(m.id)+'">Kunde anlegen</button>' : '')
+      + (canW()? '<button class="btn sm" data-pflief="'+esc(m.id)+'">Lieferant anlegen</button>' : '')
       + (m.link? '<a class="btn ghost sm" href="'+esc(m.link)+'" target="_blank" rel="noopener">In Outlook öffnen</a>' : '')
       + '</div></div>';
   });
@@ -1155,6 +1183,13 @@ async function pfKundeAus(id){
   try { msg = await pfApi("/api/mail/message?mailbox="+encodeURIComponent(PF.mailbox)+"&id="+encodeURIComponent(id)); }
   catch(e){ toast("E-Mail konnte nicht geladen werden: "+e.message); return; }
   editKunde(null, parseSignatur(msg));
+}
+async function pfLieferantAus(id){
+  toast("E-Mail wird gelesen …");
+  let msg;
+  try { msg = await pfApi("/api/mail/message?mailbox="+encodeURIComponent(PF.mailbox)+"&id="+encodeURIComponent(id)); }
+  catch(e){ toast("E-Mail konnte nicht geladen werden: "+e.message); return; }
+  editLieferant(null, parseSignatur(msg));
 }
 function pfHtmlToText(html){
   if(!html) return "";
@@ -1223,6 +1258,288 @@ function editProdukt(id){
   wireDelete(async()=>{ await remove("produkte",id); closeModal(); toast("Produkt gelöscht"); });
 }
 
+// ---------- Angebote & Rechnungen ----------
+const ANG_STATUS=[["Entwurf","p-mute"],["versendet","p-s3"],["angenommen","p-s1"],["abgelehnt","p-warn"]];
+const RECH_STATUS=[["zu stellen","p-warn"],["gestellt","p-s3"],["bezahlt","p-s1"],["storniert","p-mute"]];
+const ANG_HINWEIS="Alle Preise verstehen sich in Euro zzgl. der gesetzlichen Umsatzsteuer. Es gelten unsere Allgemeinen Geschäftsbedingungen (AGB).";
+const RECH_HINWEIS="Alle Preise in Euro. Es gelten unsere Allgemeinen Geschäftsbedingungen (AGB). Vielen Dank für die gute Zusammenarbeit.";
+const FIRMA_DEFAULT={name:"reSoilution GmbH",strasse:"",plz:"76684",ort:"Östringen",land:"Deutschland",tel:"+49 171 3145599",email:"info@resoilution.com",web:"www.resoilution.com",gf:"Philipp Max Schwab",ustid:"",steuernr:"",amtsgericht:"",hrb:"",bank:"",iban:"",bic:"",zahlungsziel:14,ustsatz:19};
+const firmaNow=()=>Object.assign({},FIRMA_DEFAULT,S.firma||{});
+const colOf=typ=>typ==="angebot"?"angebote":"rechnungen";
+const beleg=(typ,id)=>byId(S[colOf(typ)],id);
+const nf=n=>Number(n||0).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
+const money=n=>nf(n)+" €";
+const fmtMenge=n=>{n=Number(n||0);return Number.isInteger(n)?String(n):n.toLocaleString("de-DE");};
+function plusDays(iso,d){ const t=new Date((iso||todayISO())+"T00:00:00"); t.setDate(t.getDate()+Number(d||0)); return t.toISOString().slice(0,10); }
+function nextNr(typ){ const pre=typ==="angebot"?"A":"RE"; const y=new Date().getFullYear(); let mx=0; (S[colOf(typ)]||[]).forEach(d=>{ const m=(d.nr||"").match(new RegExp("^"+pre+"-"+y+"-(\\d+)$")); if(m) mx=Math.max(mx,+m[1]); }); return pre+"-"+y+"-"+String(mx+1).padStart(3,"0"); }
+function belegEmpf(doc){ return doc.empfTyp==="lieferant" ? lief(doc.lieferantId) : kunde(doc.kundeId); }
+function belegEmpfName(doc){ const e=belegEmpf(doc); return e? e.name : "–"; }
+function belegTotals(doc){ const satz=Number(doc.ustsatz!=null?doc.ustsatz:(firmaNow().ustsatz||19)); const netto=(doc.positionen||[]).reduce((s,p)=>s+Number(p.menge||0)*Number(p.einzel||0),0); const ust=netto*satz/100; return {satz,netto,ust,brutto:netto+ust}; }
+const tageSeit=iso=>{ if(!iso) return null; return Math.floor((Date.now()-new Date(iso).getTime())/86400000); };
+
+function vBelege(typ){
+  const isA=typ==="angebot"; const col=colOf(typ); const list0=S[col]||[];
+  const STAT=isA?ANG_STATUS:RECH_STATUS;
+  const flt = isA? (S.angFilter||(S.angFilter={q:"",status:""})) : (S.rechFilter||(S.rechFilter={q:"",status:""}));
+  const title=isA?"Angebote":"Rechnungen";
+  const lede=isA?"Angebote erstellen, einem Kunden oder Lieferanten zuordnen, als PDF ausgeben, kopieren und nachfassen.":"Rechnungen erstellen, Status verfolgen (zu stellen, gestellt, bezahlt) und als PDF ausgeben.";
+  let h='<div class="head"><div><h2>'+title+'</h2><div class="lede">'+lede+'</div></div><div class="actions">'
+    +(canW()?'<button class="btn" data-act="'+(isA?"newAngebot":"newRechnung")+'">'+(isA?"Angebot":"Rechnung")+' erstellen</button>':'')
+    +'<button class="btn ghost" data-firma>Firmendaten</button></div></div>';
+  // KPIs
+  const sum=arr=>arr.reduce((s,d)=>s+belegTotals(d).brutto,0);
+  if(isA){
+    const offen=list0.filter(d=>d.status==="versendet");
+    const nach=offen.filter(d=>tageSeit(d.versendetAm)>=10);
+    const ang=list0.filter(d=>d.status==="angenommen");
+    h+='<div class="kpis">'
+      +kpi("Angebote gesamt",list0.length,"alle",'var(--s3)',"#angebote")
+      +kpi("Versendet",offen.length,"warten auf Antwort",'var(--s2)')
+      +kpi("Nachfassen",nach.length,"≥ 10 Tage offen",'var(--warn)')
+      +kpi("Angenommen",ang.length,money(sum(ang)),'var(--s1)')+'</div>';
+  } else {
+    const zu=list0.filter(d=>d.status==="zu stellen");
+    const gestellt=list0.filter(d=>d.status==="gestellt");
+    const bezahlt=list0.filter(d=>d.status==="bezahlt");
+    h+='<div class="kpis">'
+      +kpi("Noch zu stellen",zu.length,money(sum(zu)),'var(--warn)')
+      +kpi("Gestellt / offen",gestellt.length,money(sum(gestellt)),'var(--s3)')
+      +kpi("Bezahlt",bezahlt.length,money(sum(bezahlt)),'var(--s1)')
+      +kpi("Rechnungen gesamt",list0.length,"alle",'var(--s4)')+'</div>';
+  }
+  h+='<div class="toolbar"><input id="'+(isA?"angq":"rechq")+'" type="search" placeholder="Suche Nr., Empfänger …" value="'+esc(flt.q||"")+'" aria-label="Suche">'
+    +'<select id="'+(isA?"angstatus":"rechstatus")+'" aria-label="Status"><option value="">Alle Status</option>'+STAT.map(s=>'<option '+(flt.status===s[0]?"selected":"")+'>'+esc(s[0])+'</option>').join("")+'</select></div>';
+  if(!list0.length) return h+'<div class="panel empty"><b>Noch keine '+title+'</b>'+(S.loaded[col]?'Erstelle das erste '+(isA?"Angebot":"die erste Rechnung")+'.':'Daten werden geladen …')+'</div>';
+  const q=(flt.q||"").trim().toLowerCase();
+  let list=list0.filter(d=>(!flt.status||d.status===flt.status) && (!q||[d.nr,belegEmpfName(d),(proj(d.projektId)||{}).titel].join(" ").toLowerCase().includes(q)));
+  list.sort((a,b)=>(b.nr||"").localeCompare(a.nr||""));
+  if(!list.length) return h+'<div class="panel empty">Nichts passt zur Suche.</div>';
+  h+='<div class="tw"><table class="t"><thead><tr><th>Nr.</th><th>Datum</th><th>Empfänger</th><th>Projekt</th><th class="num">Brutto</th><th>Status</th><th></th></tr></thead><tbody>';
+  list.forEach(d=>{ const t=belegTotals(d); const pj=proj(d.projektId);
+    const nach=isA&&d.status==="versendet"&&tageSeit(d.versendetAm)>=10;
+    h+='<tr class="click" data-openbeleg="'+esc(d.id)+'" data-typ="'+typ+'" tabindex="0">'
+      +'<td class="mono">'+esc(d.nr||"–")+'</td><td>'+fmtD(d.datum)+'</td>'
+      +'<td><b>'+esc(belegEmpfName(d))+'</b>'+(d.empfTyp==="lieferant"?'<span class="sub">Lieferant</span>':'')+'</td>'
+      +'<td>'+esc(pj?(pj.kurz||pj.titel):"–")+'</td>'
+      +'<td class="num">'+money(t.brutto)+'</td>'
+      +'<td>'+pill(d.status,STAT)+(nach?' <span class="pill p-warn">nachfassen</span>':'')+'</td>'
+      +'<td class="num"><button class="btn ghost sm" data-belegpdf="'+esc(d.id)+'" data-typ="'+typ+'">PDF</button></td></tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+function vAngebote(){ return vBelege("angebot"); }
+function vRechnungen(){ return vBelege("rechnung"); }
+
+function belegPosTable(doc){
+  let h='<div class="tw"><table class="t"><thead><tr><th>Pos.</th><th>Leistung</th><th class="num">Menge</th><th class="num">Einzelpreis</th><th class="num">Betrag</th></tr></thead><tbody>';
+  (doc.positionen||[]).forEach((p,i)=>{ h+='<tr><td class="mono">'+(i+1)+'</td><td><b>'+esc(p.titel||"")+'</b>'+(p.beschr?'<span class="sub">'+esc(p.beschr)+'</span>':'')+'</td><td class="num">'+fmtMenge(p.menge)+' '+esc(p.einheit||"")+'</td><td class="num">'+money(p.einzel)+'</td><td class="num">'+money(Number(p.menge||0)*Number(p.einzel||0))+'</td></tr>'; });
+  const t=belegTotals(doc);
+  h+='<tr><td colspan="3"></td><td class="num" style="color:var(--muted)">Netto</td><td class="num">'+money(t.netto)+'</td></tr>';
+  h+='<tr><td colspan="3"></td><td class="num" style="color:var(--muted)">'+nf(t.satz).replace(",00","")+' % USt</td><td class="num">'+money(t.ust)+'</td></tr>';
+  h+='<tr><td colspan="3"></td><td class="num"><b>Gesamt</b></td><td class="num"><b>'+money(t.brutto)+'</b></td></tr>';
+  return h+'</tbody></table></div>';
+}
+function showBeleg(typ,id){
+  const isA=typ==="angebot"; const d=beleg(typ,id); if(!d){ closeModal(); return; }
+  const STAT=isA?ANG_STATUS:RECH_STATUS; const e=belegEmpf(d); const pj=proj(d.projektId);
+  let h='<div class="mh"><div><span class="lab-tag">'+(isA?"Angebot":"Rechnung")+' '+esc(d.nr||"")+'</span> '+pill(d.status,STAT)+'<h3>'+esc(belegEmpfName(d))+'</h3></div><button class="xbtn" data-close aria-label="Schließen">×</button></div>';
+  h+='<div class="tw"><table class="t"><tbody>'
+    +row("Empfänger",esc(belegEmpfName(d))+(e&&adr(e)?'<span class="sub">'+esc(adr(e))+'</span>':''))
+    +row(isA?"Belegdatum":"Rechnungsdatum",fmtD(d.datum))
+    +(isA?row("Gültig bis",fmtD(d.gueltigBis)):row("Leistungsdatum",fmtD(d.leistungsdatum))+row("Zahlungsziel",fmtD(d.faelligBis)))
+    +(pj?row("Projekt",esc(pj.kurz||pj.titel)):"")
+    +(d.versendetAm?row("Versendet am",fmtDT(d.versendetAm)):"")
+    +(!isA&&d.bezahltAm?row("Bezahlt am",fmtD(d.bezahltAm)):"")
+    +'</tbody></table></div>';
+  h+=belegPosTable(d);
+  if(d.hinweis) h+='<div class="detail"><h4>Hinweise</h4><p>'+esc(d.hinweis)+'</p></div>';
+  if(canW()){
+    h+='<div style="margin:14px 0 4px"><span class="lab-tag">Status setzen</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
+    STAT.forEach(s=>{ h+='<button class="btn ghost sm'+(d.status===s[0]?' ':'')+'" data-setstatus="'+esc(s[0])+'" data-id="'+esc(id)+'" data-typ="'+typ+'"'+(d.status===s[0]?' style="border-color:var(--accent);color:var(--accent)"':'')+'>'+esc(s[0])+'</button>'; });
+    h+='</div></div>';
+  }
+  h+='<div class="mf">'
+    +(canW()?'<span class="left"><button class="btn danger sm" data-askdel>Löschen</button></span>':'')
+    +'<button class="btn ghost" data-belegpdf="'+esc(id)+'" data-typ="'+typ+'">PDF / Drucken</button>'
+    +(canW()?'<button class="btn ghost" data-copybeleg="'+esc(id)+'" data-typ="'+typ+'">'+(isA?"Kopieren":"Als Angebot/Kopie")+'</button>':'')
+    +(canW()&&e&&e.email?'<button class="btn ghost" data-send="'+esc(id)+'" data-typ="'+typ+'">Versenden</button>':'')
+    +(canW()?'<button class="btn ghost" data-editbeleg="'+esc(id)+'" data-typ="'+typ+'">Bearbeiten</button>':'')
+    +'<button class="btn" data-close>Schließen</button></div>';
+  openModal(h, ()=>showBeleg(typ,id));
+  wireDelete(async()=>{ await remove(colOf(typ),id); closeModal(); toast((isA?"Angebot":"Rechnung")+" gelöscht"); });
+}
+
+function editBeleg(typ,id,prefill){
+  const isA=typ==="angebot"; const col=colOf(typ);
+  const d = id? clone(beleg(typ,id)) : Object.assign({
+    nr:nextNr(typ), datum:todayISO(), empfTyp:"kunde", kundeId:"", lieferantId:"", projektId:"",
+    status:isA?"Entwurf":"zu stellen",
+    gueltigBis:isA?plusDays(todayISO(),30):undefined,
+    leistungsdatum:!isA?todayISO():undefined,
+    faelligBis:!isA?plusDays(todayISO(),firmaNow().zahlungsziel||14):undefined,
+    bezahltAm:"", positionen:[], hinweis:isA?ANG_HINWEIS:RECH_HINWEIS
+  }, prefill||{});
+  let pos=clone(d.positionen||[]); if(!pos.length) pos=[{titel:"",beschr:"",menge:1,einheit:"Stück",einzel:""}];
+  const STAT=isA?ANG_STATUS:RECH_STATUS;
+  const kundenOpts=cur=>'<option value="">— wählen —</option>'+S.kunden.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(k=>'<option value="'+esc(k.id)+'" '+(cur===k.id?"selected":"")+'>'+esc(k.name)+'</option>').join("");
+  const liefOpts=cur=>'<option value="">— wählen —</option>'+S.lieferanten.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(l=>'<option value="'+esc(l.id)+'" '+(cur===l.id?"selected":"")+'>'+esc(l.name)+'</option>').join("");
+  const projOpts=cur=>'<option value="">— ohne Projekt —</option>'+S.projekte.map(p=>'<option value="'+esc(p.id)+'" '+(cur===p.id?"selected":"")+'>'+esc(p.nr+" · "+(p.kurz||p.titel))+'</option>').join("");
+  let h='<div class="mh"><h3>'+(id?"Bearbeiten":(isA?"Angebot erstellen":"Rechnung erstellen"))+' · '+esc(d.nr)+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div>';
+  h+='<form id="fBeleg" class="form">'
+    +'<div class="f"><label for="i-empfTyp">Empfänger-Art</label><select id="i-empfTyp" name="empfTyp"><option value="kunde"'+(d.empfTyp!=="lieferant"?" selected":"")+'>Kunde</option><option value="lieferant"'+(d.empfTyp==="lieferant"?" selected":"")+'>Lieferant</option></select></div>'
+    +'<div class="f"><label for="i-empfId">Empfänger</label><select id="i-empfId" name="empfId">'+(d.empfTyp==="lieferant"?liefOpts(d.lieferantId):kundenOpts(d.kundeId))+'</select></div>'
+    +'<div class="f full"><label for="i-projektId">Projekt (optional)</label><select id="i-projektId" name="projektId">'+projOpts(d.projektId)+'</select></div>'
+    +fld("nr","Nummer",d.nr)
+    +sel("status","Status",STAT.map(s=>s[0]),d.status)
+    +fld("datum",isA?"Belegdatum":"Rechnungsdatum",d.datum,"","","date")
+    +(isA? fld("gueltigBis","Gültig bis",d.gueltigBis,"","","date")
+         : fld("leistungsdatum","Leistungsdatum",d.leistungsdatum,"","","date")+fld("faelligBis","Zahlungsziel (fällig bis)",d.faelligBis,"","","date")+fld("bezahltAm","Bezahlt am (echter Eingang)",d.bezahltAm,"","","date"))
+    +'</form>';
+  h+='<div style="margin:6px 0 4px"><span class="lab-tag">Positionen</span></div><div id="posBody"></div>'
+    +'<button type="button" class="btn ghost sm" id="addPos">+ Position</button>';
+  h+='<div id="posTot" style="margin-top:14px"></div>';
+  h+='<div class="f full" style="margin-top:12px"><label for="i-hinweis">Hinweise (unten im Dokument)</label><textarea id="i-hinweis" name="hinweis">'+esc(d.hinweis||"")+'</textarea></div>';
+  h+='<div class="mf">'+(id?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Löschen</button></span>':'')
+    +'<button class="btn ghost" id="saveBelegPdf">Speichern & PDF</button>'
+    +'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveBeleg">Speichern</button></div>';
+  openModal(h);
+
+  function rowHtml(p,i){ return '<div class="posrow" data-i="'+i+'" style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">'
+    +'<div style="display:grid;grid-template-columns:1fr 70px 80px 100px 1fr 32px;gap:8px;align-items:center">'
+    +'<input data-k="titel" placeholder="Leistung" value="'+esc(p.titel||"")+'">'
+    +'<input data-k="menge" type="number" step="0.01" min="0" value="'+esc(p.menge==null?"":p.menge)+'" aria-label="Menge">'
+    +'<input data-k="einheit" placeholder="Einheit" value="'+esc(p.einheit||"")+'">'
+    +'<input data-k="einzel" type="number" step="0.01" min="0" placeholder="Einzelpreis" value="'+esc(p.einzel==null?"":p.einzel)+'" aria-label="Einzelpreis">'
+    +'<div class="num" data-betrag style="text-align:right;font-variant-numeric:tabular-nums">'+money(Number(p.menge||0)*Number(p.einzel||0))+'</div>'
+    +'<button type="button" class="btn ghost sm" data-rm aria-label="Position entfernen">×</button></div>'
+    +'<input data-k="beschr" placeholder="Beschreibung (optional)" value="'+esc(p.beschr||"")+'" style="margin-top:6px;width:100%">'
+    +'</div>'; }
+  function renderPos(){ $("#posBody").innerHTML=pos.map(rowHtml).join(""); recalc(); }
+  function recalc(){ let netto=0; pos.forEach((p,i)=>{ const b=Number(p.menge||0)*Number(p.einzel||0); netto+=b; const el=document.querySelector('.posrow[data-i="'+i+'"] [data-betrag]'); if(el) el.textContent=money(b); }); const satz=firmaNow().ustsatz||19; const ust=netto*satz/100;
+    $("#posTot").innerHTML='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-variant-numeric:tabular-nums">'
+      +'<div style="display:flex;gap:24px"><span style="color:var(--muted)">Netto</span><span style="min-width:120px;text-align:right">'+money(netto)+'</span></div>'
+      +'<div style="display:flex;gap:24px"><span style="color:var(--muted)">'+satz+' % USt</span><span style="min-width:120px;text-align:right">'+money(ust)+'</span></div>'
+      +'<div style="display:flex;gap:24px;font-weight:700;color:var(--accent)"><span>Gesamt (brutto)</span><span style="min-width:120px;text-align:right">'+money(netto+ust)+'</span></div></div>';
+  }
+  renderPos();
+  const formEl=$("#fBeleg");
+  $("#i-empfTyp").onchange=e=>{ const v=e.target.value; $("#i-empfId").innerHTML = v==="lieferant"? liefOpts("") : kundenOpts(""); };
+  $("#posBody").addEventListener("input",e=>{ const rowEl=e.target.closest(".posrow"); if(!rowEl) return; const i=+rowEl.dataset.i; const k=e.target.dataset.k; if(k){ pos[i][k]=e.target.value; recalc(); } });
+  $("#posBody").addEventListener("click",e=>{ const rm=e.target.closest("[data-rm]"); if(!rm) return; const i=+rm.closest(".posrow").dataset.i; pos.splice(i,1); if(!pos.length) pos.push({titel:"",beschr:"",menge:1,einheit:"Stück",einzel:""}); renderPos(); });
+  $("#addPos").onclick=()=>{ pos.push({titel:"",beschr:"",menge:1,einheit:"Stück",einzel:""}); renderPos(); };
+
+  async function doSave(thenPdf){
+    const f=formData("#fBeleg");
+    const empfId=$("#i-empfId").value;
+    if(!empfId){ toast("Bitte einen Empfänger wählen."); return null; }
+    const clean=pos.map(p=>({titel:(p.titel||"").trim(),beschr:(p.beschr||"").trim(),menge:Number(p.menge||0),einheit:(p.einheit||"").trim(),einzel:Number(p.einzel||0)})).filter(p=>p.titel||p.einzel);
+    if(!clean.length){ toast("Bitte mindestens eine Position mit Leistung angeben."); return null; }
+    const out=Object.assign({},d,{
+      nr:f.nr, status:f.status, datum:f.datum, projektId:f.projektId||"",
+      empfTyp:f.empfTyp, kundeId:f.empfTyp==="lieferant"?"":empfId, lieferantId:f.empfTyp==="lieferant"?empfId:"",
+      positionen:clean, hinweis:f.hinweis||"", updatedAt:new Date().toISOString()
+    });
+    if(isA){ out.gueltigBis=f.gueltigBis||""; } else { out.leistungsdatum=f.leistungsdatum||""; out.faelligBis=f.faelligBis||""; out.bezahltAm=f.bezahltAm||""; }
+    if(f.status==="versendet" && !out.versendetAm) out.versendetAm=new Date().toISOString();
+    const docId=id||S.db.collection(col).doc().id; delete out.id;
+    await write(col,docId,out); toast((isA?"Angebot":"Rechnung")+" gespeichert");
+    if(thenPdf) printBeleg(typ,docId); else showBeleg(typ,docId);
+    return docId;
+  }
+  $("#saveBeleg").onclick=()=>doSave(false);
+  $("#saveBelegPdf").onclick=()=>doSave(true);
+  wireDelete(async()=>{ await remove(col,id); closeModal(); toast("Gelöscht"); });
+}
+
+function copyBeleg(typ,id){
+  const src=beleg(typ,id); if(!src) return;
+  const p=clone(src);
+  delete p.id; p.nr=nextNr(typ); p.datum=todayISO(); p.status=typ==="angebot"?"Entwurf":"zu stellen";
+  p.versendetAm=""; p.bezahltAm="";
+  if(typ==="angebot") p.gueltigBis=plusDays(todayISO(),30); else { p.leistungsdatum=todayISO(); p.faelligBis=plusDays(todayISO(),firmaNow().zahlungsziel||14); }
+  editBeleg(typ,null,p);
+}
+async function setBelegStatus(typ,id,status){
+  const src=beleg(typ,id); if(!src) return; const d=clone(src); delete d.id;
+  d.status=status;
+  if(status==="versendet" && !d.versendetAm) d.versendetAm=new Date().toISOString();
+  await write(colOf(typ),id,d); toast("Status: "+status);
+}
+function sendBeleg(typ,id){
+  const isA=typ==="angebot"; const d=beleg(typ,id); if(!d) return; const e=belegEmpf(d); if(!e||!e.email){ toast("Keine E-Mail-Adresse hinterlegt."); return; }
+  const f=firmaNow(); const betreff=(isA?"Angebot ":"Rechnung ")+(d.nr||"")+" – "+f.name;
+  const anrede=e.ansprechpartner?("Sehr geehrte/r "+e.ansprechpartner+","):"Sehr geehrte Damen und Herren,";
+  const body=anrede+"\n\n"+(isA?"anbei unser Angebot "+d.nr+".":"anbei unsere Rechnung "+d.nr+" über "+money(belegTotals(d).brutto)+".")+"\n\nMit freundlichen Grüßen\n"+f.name+"\n"+(f.gf||"");
+  printBeleg(typ,id);
+  setBelegStatus(typ,id,"versendet");
+  toast("PDF speichern und der Mail anhängen.");
+  location.href="mailto:"+encodeURIComponent(e.email)+"?subject="+encodeURIComponent(betreff)+"&body="+encodeURIComponent(body);
+}
+
+function belegPrintHTML(typ,d){
+  const isA=typ==="angebot"; const f=firmaNow(); const e=belegEmpf(d)||{}; const t=belegTotals(d);
+  const S1="font-family:Georgia,'Times New Roman',serif"; const INK="#1c1c1a",GREY="#6f6f68",GREYL="#8d8d86",HAIR="#d8d8d2",HAIR2="#ededea";
+  const addrLines=[e.strasse,[e.plz,e.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const rows=(d.positionen||[]).map(p=>'<tr>'
+    +'<td style="padding:9px 0;border-bottom:.5px solid '+HAIR2+'"><div style="'+S1+';font-size:13px;color:'+INK+'">'+esc(p.titel||"")+'</div>'+(p.beschr?'<div style="font-size:11px;color:'+GREY+';margin-top:2px">'+esc(p.beschr)+'</div>':'')+'</td>'
+    +'<td style="padding:9px 0;border-bottom:.5px solid '+HAIR2+';text-align:right;color:'+GREYL+';font-size:12px;white-space:nowrap">'+fmtMenge(p.menge)+' '+esc(p.einheit||"")+'</td>'
+    +'<td style="padding:9px 0;border-bottom:.5px solid '+HAIR2+';text-align:right;white-space:nowrap">'+nf(Number(p.menge||0)*Number(p.einzel||0))+'</td></tr>').join("");
+  const totRow=(lab,val,strong)=>'<tr><td></td><td style="padding:'+(strong?"8px":"3px")+' 0 3px;text-align:right;'+(strong?S1+';font-size:16px':"color:"+GREYL)+';'+(strong?"border-top:1px solid #2f3a28":"")+'">'+lab+'</td><td style="padding:'+(strong?"8px":"3px")+' 0 3px;text-align:right;white-space:nowrap;'+(strong?S1+';font-size:16px':"")+';'+(strong?"border-top:1px solid #2f3a28":"")+'">'+val+'</td></tr>';
+  const zahlung = !isA ? ('<div style="margin-top:22px;font-size:12px;color:'+INK+'"><div style="'+S1+';font-size:13px;color:#2f3a28;margin-bottom:4px">Zahlung</div>'
+    +'Bitte überweisen Sie '+money(t.brutto)+' bis zum '+(d.faelligBis?fmtD(d.faelligBis):"[Datum]")+' ohne Abzug.<br>'
+    +'Empfänger '+esc(f.name)+' · Bank '+esc(f.bank||"[Bankname]")+' · IBAN '+esc(f.iban||"[DE..]")+' · BIC '+esc(f.bic||"[..]")+'<br>Verwendungszweck '+esc(d.nr||"")+'</div>') : "";
+  return '<div style="max-width:720px;margin:0 auto;color:'+INK+';font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5">'
+    +'<div style="text-align:center;border-bottom:.5px solid '+HAIR+';padding-bottom:16px;margin-bottom:20px">'
+      +'<div style="'+S1+';font-size:30px;color:#2f3a28">reSoilution</div>'
+      +'<div style="font-size:11px;color:'+GREY+';margin-top:4px">Bodenverbesserung · Umwelttechnik · '+esc([f.plz,f.ort].filter(Boolean).join(" "))+'</div></div>'
+    +'<div style="display:flex;justify-content:space-between;gap:20px;margin-bottom:20px">'
+      +'<div><div style="font-size:11px;color:'+GREYL+'">'+(isA?"Angebot für":"Rechnung an")+'</div>'
+        +'<div style="'+S1+';font-size:15px;margin-top:2px">'+esc(e.name||"—")+'</div>'
+        +(addrLines?'<div style="color:'+GREY+'">'+esc(addrLines)+'</div>':'')+'</div>'
+      +'<div style="text-align:right;white-space:nowrap">'
+        +'<div style="font-size:11px;color:'+GREYL+'">'+(isA?"Angebot Nr.":"Rechnung Nr.")+'</div><div>'+esc(d.nr||"")+'</div>'
+        +'<div style="font-size:11px;color:'+GREYL+';margin-top:6px">Datum</div><div>'+fmtD(d.datum)+'</div>'
+        +(isA?'<div style="font-size:11px;color:'+GREYL+';margin-top:6px">Gültig bis</div><div>'+fmtD(d.gueltigBis)+'</div>'
+             :'<div style="font-size:11px;color:'+GREYL+';margin-top:6px">Leistungsdatum</div><div>'+fmtD(d.leistungsdatum)+'</div>')+'</div></div>'
+    +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
+      +'<th style="text-align:left;font-weight:normal;font-size:11px;color:'+GREYL+';border-bottom:.5px solid '+HAIR+';padding-bottom:6px">Leistung</th>'
+      +'<th style="text-align:right;font-weight:normal;font-size:11px;color:'+GREYL+';border-bottom:.5px solid '+HAIR+';padding-bottom:6px">Menge</th>'
+      +'<th style="text-align:right;font-weight:normal;font-size:11px;color:'+GREYL+';border-bottom:.5px solid '+HAIR+';padding-bottom:6px">Betrag €</th></tr></thead>'
+      +'<tbody>'+rows
+      +totRow("Zwischensumme",money(t.netto),false)
+      +totRow(nf(t.satz).replace(",00","")+" % USt",money(t.ust),false)
+      +totRow("Gesamtbetrag",money(t.brutto),true)
+      +'</tbody></table>'
+    +zahlung
+    +(d.hinweis?'<div style="margin-top:18px;font-size:11px;color:'+GREY+'">'+esc(d.hinweis)+'</div>':'')
+    +'<div style="margin-top:26px;border-top:.5px solid '+HAIR+';padding-top:8px;text-align:center;font-size:9px;color:'+GREYL+'">'
+      +esc(f.name)+(f.strasse?' · '+esc(f.strasse):'')+' · '+esc([f.plz,f.ort].filter(Boolean).join(" "))+' · Geschäftsführer '+esc(f.gf||"")+'<br>'
+      +(f.amtsgericht?esc(f.amtsgericht)+(f.hrb?" "+esc(f.hrb):"")+' · ':'')+(f.ustid?'USt-IdNr. '+esc(f.ustid)+' · ':'')+(f.iban?'IBAN '+esc(f.iban):'')+'</div>'
+    +'</div>';
+}
+function printBeleg(typ,id){
+  const d=beleg(typ,id); if(!d){ toast("Beleg nicht gefunden."); return; }
+  let mount=document.getElementById("printMount"); if(!mount){ mount=document.createElement("div"); mount.id="printMount"; document.body.appendChild(mount); }
+  mount.innerHTML='<style>@media screen{#printMount{display:none}}@media print{body>*:not(#printMount){display:none!important}#printMount{display:block!important}@page{size:A4;margin:18mm}}</style>'+belegPrintHTML(typ,d);
+  setTimeout(()=>window.print(),60);
+}
+
+function editFirma(){
+  const f=firmaNow();
+  let h='<div class="mh"><h3>Firmendaten (für Angebote & Rechnungen)</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fFirma" class="form">'
+    +fld("name","Firma",f.name,"full")+fld("strasse","Straße und Hausnummer",f.strasse,"full")
+    +fld("plz","PLZ",f.plz)+fld("ort","Ort",f.ort)
+    +fld("gf","Geschäftsführer",f.gf)+fld("tel","Telefon",f.tel)
+    +fld("email","E-Mail",f.email)+fld("web","Web",f.web)
+    +fld("amtsgericht","Amtsgericht",f.amtsgericht)+fld("hrb","HRB",f.hrb)
+    +fld("ustid","USt-IdNr.",f.ustid)+fld("steuernr","Steuernummer",f.steuernr)
+    +fld("bank","Bank",f.bank)+fld("iban","IBAN",f.iban)+fld("bic","BIC",f.bic)
+    +fld("zahlungsziel","Zahlungsziel (Tage)",f.zahlungsziel,"","","number")+fld("ustsatz","USt-Satz (%)",f.ustsatz,"","","number")
+    +'</form><div class="mf"><button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveFirma">Speichern</button></div>';
+  openModal(h);
+  $("#saveFirma").onclick=async()=>{ const d=formData("#fFirma"); d.zahlungsziel=Number(d.zahlungsziel||14); d.ustsatz=Number(d.ustsatz||19); await write("einstellungen","firma",d); toast("Firmendaten gespeichert"); closeModal(); };
+}
+
 // ---------- Formular-Helfer ----------
 function fld(name,label,val,cls,req,type){ const ph = (typeof req==="string")? req : ""; return '<div class="f '+(cls||"")+'"><label for="i-'+name+'">'+label+'</label><input id="i-'+name+'" name="'+name+'" type="'+(type||"text")+'" value="'+esc(val==null?"":val)+'" '+(req===true?"required":"")+' placeholder="'+esc(ph)+'"></div>'; }
 function area(name,label,val,cls){ return '<div class="f '+(cls===undefined?"full":cls)+'"><label for="i-'+name+'">'+label+'</label><textarea id="i-'+name+'" name="'+name+'">'+esc(val||"")+'</textarea></div>'; }
@@ -1240,7 +1557,7 @@ render = function(){ _render(); if(modalRerender){ const m=$("#modalRoot"); cons
 
 // ---------- Ereignisse ----------
 document.addEventListener("click", async e=>{
-  const t = e.target.closest("[data-act],[data-lief],[data-editlief],[data-kunde],[data-editkunde],[data-produkt],[data-editprodukt],[data-probe],[data-projekt],[data-notiz],[data-kpi],[data-ana],[data-close],[data-editset],[data-editprojekt],[data-editana],[data-editlab],[data-addnote],[data-pfkunde],#kiRun,#kiStop,#kiSave,#kiRegelnSave");
+  const t = e.target.closest("[data-act],[data-lief],[data-editlief],[data-kunde],[data-editkunde],[data-produkt],[data-editprodukt],[data-probe],[data-projekt],[data-notiz],[data-kpi],[data-ana],[data-close],[data-editset],[data-editprojekt],[data-editana],[data-editlab],[data-addnote],[data-pfkunde],[data-pflief],[data-openbeleg],[data-editbeleg],[data-copybeleg],[data-belegpdf],[data-setstatus],[data-send],[data-firma],[data-newbeleg],#kiRun,#kiStop,#kiSave,#kiRegelnSave");
   if(e.target.id==="mbg"){ closeModal(); return; }
   if(!t) return;
   if(t.hasAttribute("data-close")){ closeModal(); return; }
@@ -1254,7 +1571,18 @@ document.addEventListener("click", async e=>{
   if(act==="pfReload") return pfLoadInbox();
   if(act==="pfSearch") return pfSearch();
   if(t.dataset.pfkunde) return pfKundeAus(t.dataset.pfkunde);
+  if(t.dataset.pflief) return pfLieferantAus(t.dataset.pflief);
   if(act==="newProdukt") return editProdukt(null);
+  if(act==="newAngebot") return editBeleg("angebot", null, null);
+  if(act==="newRechnung") return editBeleg("rechnung", null, null);
+  if(t.hasAttribute("data-firma")) return editFirma();
+  if(t.dataset.belegpdf){ e.preventDefault(); return printBeleg(t.dataset.typ, t.dataset.belegpdf); }
+  if(t.dataset.editbeleg) return editBeleg(t.dataset.typ, t.dataset.editbeleg);
+  if(t.dataset.copybeleg) return copyBeleg(t.dataset.typ, t.dataset.copybeleg);
+  if(t.dataset.setstatus) return setBelegStatus(t.dataset.typ, t.dataset.id, t.dataset.setstatus);
+  if(t.dataset.send) return sendBeleg(t.dataset.typ, t.dataset.send);
+  if(t.dataset.newbeleg) return editBeleg(t.dataset.newbeleg, null, {empfTyp:"kunde", kundeId:t.dataset.kid});
+  if(t.dataset.openbeleg){ e.preventDefault(); return showBeleg(t.dataset.typ, t.dataset.openbeleg); }
   if(act==="newProbeFrom") return editProbe(null, {lieferantId:t.dataset.lid});
   if(t.dataset.editlief) return editLieferant(t.dataset.editlief);
   if(t.dataset.lief){ e.preventDefault(); return showLieferant(t.dataset.lief); }
@@ -1285,7 +1613,7 @@ document.addEventListener("click", async e=>{
   }
 });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && $("#modalRoot").innerHTML) closeModal(); if(e.key==="Enter" && e.target.matches && e.target.matches("tr.click,.chip[data-ana],a[data-lief]")) e.target.click(); if(e.key==="Enter" && e.target.id==="pfQ"){ e.preventDefault(); pfSearch(); } });
-document.addEventListener("input", e=>{ if(e.target.id==="fq"){ S.filter.q=e.target.value; render(); } if(e.target.id==="lq"){ S.filter.lq=e.target.value; render(); } if(e.target.id==="kq"){ S.kFilter.q=e.target.value; render(); } if(e.target.id==="pq"){ S.pFilter.q=e.target.value; render(); } if(e.target.id==="pfQ"){ PF.q=e.target.value; } });
+document.addEventListener("input", e=>{ if(e.target.id==="fq"){ S.filter.q=e.target.value; render(); } if(e.target.id==="lq"){ S.filter.lq=e.target.value; render(); } if(e.target.id==="kq"){ S.kFilter.q=e.target.value; render(); } if(e.target.id==="pq"){ S.pFilter.q=e.target.value; render(); } if(e.target.id==="angq"){ S.angFilter.q=e.target.value; render(); } if(e.target.id==="rechq"){ S.rechFilter.q=e.target.value; render(); } if(e.target.id==="pfQ"){ PF.q=e.target.value; } });
 document.addEventListener("change", e=>{
   const id=e.target.id;
   if(id==="fprojekt"){ S.filter.projekt=e.target.value; render(); }
@@ -1293,6 +1621,8 @@ document.addEventListener("change", e=>{
   if(id==="flabor"){ S.filter.labor=e.target.value; render(); }
   if(id==="lland"){ S.filter.lland=e.target.value; render(); }
   if(id==="kland"){ S.kFilter.land=e.target.value; render(); }
+  if(id==="angstatus"){ S.angFilter.status=e.target.value; render(); }
+  if(id==="rechstatus"){ S.rechFilter.status=e.target.value; render(); }
   if(id==="aProjekt"){ S.aFilter.projekt=e.target.value; render(); }
   if(id==="aKat"){ S.aFilter.kategorie=e.target.value; render(); }
   if(id==="kiP"){ S.kiSel.projekt=e.target.value; S.kiSel.set=""; S.kiText=""; render(); }
