@@ -193,6 +193,7 @@
       <a href="#produkte" data-r="produkte">Produkte <span class="cnt" id="c-produkte"></span></a>
       <a href="#angebote" data-r="angebote">Angebote <span class="cnt" id="c-angebote"></span></a>
       <a href="#rechnungen" data-r="rechnungen">Rechnungen <span class="cnt" id="c-rechnungen"></span></a>
+      <a href="#stunden" data-r="stunden">Stunden <span class="cnt" id="c-stunden"></span></a>
       <a href="#fdb" data-r="fdb">Forschungsdatenbank</a>
       <a href="#assistent" data-r="assistent">Assistent</a>
       <a href="#onboarding" data-r="onboarding">Onboarding</a>
@@ -225,7 +226,7 @@ const MATERIAL = ["Grundsubstrat","Zuschlagstoff","Mischung / Behandlungsvariant
 const SET_COLORS = ["s1","s2","s3","s4"];
 
 const TEAM_DEFAULT = ["Selina","Nadi","Paul","Vitus","Philipp","Harry","Sven"];
-const S = { projekte:[], proben:[], lieferanten:[], analysen:[], labore:[], auswertungen:[], notizen:[], kunden:[], produkte:[], angebote:[], rechnungen:[], firma:null, angFilter:{q:"",status:""}, rechFilter:{q:"",status:""}, ki:{regeln:""}, team:TEAM_DEFAULT.slice(),
+const S = { projekte:[], proben:[], lieferanten:[], analysen:[], labore:[], auswertungen:[], notizen:[], kunden:[], produkte:[], angebote:[], rechnungen:[], stunden:[], firma:null, angFilter:{q:"",status:""}, rechFilter:{q:"",status:""}, sFilter:{q:"",wer:"",von:"",bis:""}, ki:{regeln:""}, team:TEAM_DEFAULT.slice(),
   meId:null, canWrite:null, readOnly:false, assets:null, sample:null, user:null, db:null,
   loaded:{}, filter:{q:"",projekt:"",status:"",labor:""}, kFilter:{q:"",land:""}, pFilter:{q:""}, aFilter:{projekt:"",kategorie:""}, kiSel:{projekt:"",set:""}, kiBusy:false, kiText:"", kiCtl:null };
 
@@ -244,6 +245,10 @@ const liefName = p => { const l = p && p.lieferantId && lief(p.lieferantId); ret
 const ana = code => S.analysen.find(a=>a.code===code);
 const setOf = (p,setId) => p && (p.sets||[]).find(s=>s.id===setId);
 const uid = p => p + Math.random().toString(36).slice(2,9);
+// Stunden: Uhrzeit ↔ Dauer
+const stMins = t => { const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/); return m? (+m[1])*60+(+m[2]) : null; };
+const stDur = (a,b) => { const x=stMins(a), y=stMins(b); if(x==null||y==null) return null; let d=y-x; if(d<0) d+=1440; return d; };
+const stHM = min => { min=Math.max(0,Math.round(min||0)); if(!min) return "–"; const h=Math.floor(min/60), m=min%60; return (h?h+" h":"")+(h&&m?" ":"")+(m?m+" min":(h?"":"0 min")); };
 const clone = o => JSON.parse(JSON.stringify(o||{}));
 let toastT;
 function toast(msg){ clearTimeout(toastT); let el=$("#toast"); if(!el){ el=document.createElement("div"); el.id="toast"; el.className="toast"; document.body.appendChild(el);} el.textContent=msg; el.hidden=false; toastT=setTimeout(()=>el.hidden=true,2600); }
@@ -314,6 +319,7 @@ async function boot(){
       subscribe("produkte","produkte");
       subscribe("angebote","angebote");
       subscribe("rechnungen","rechnungen");
+      subscribe("stunden","stunden");
       db.collection("einstellungen").onSnapshot(snap=>{ const d=snap.docs.find(x=>x.id==="ki"); S.ki = d? clone(d.data()) : {regeln:""}; const t=snap.docs.find(x=>x.id==="team"); const tm=t&&t.data().mitglieder; S.team = Array.isArray(tm)&&tm.length? tm.slice() : TEAM_DEFAULT.slice(); const fr=snap.docs.find(x=>x.id==="firma"); S.firma = fr? fr.data() : null; S.loaded.ki=true; render(); }, ()=>{});
     }
     clearTimeout(slow); S.slow=false;
@@ -322,7 +328,7 @@ async function boot(){
 }
 
 // ---------- Routing ----------
-const ROUTES = ["uebersicht","projekte","kunden","lieferanten","produkte","angebote","rechnungen","fdb","proben","analysen","labore","auswertung","assistent","onboarding","postfach"];
+const ROUTES = ["uebersicht","projekte","kunden","lieferanten","produkte","angebote","rechnungen","stunden","fdb","proben","analysen","labore","auswertung","assistent","onboarding","postfach"];
 const route = () => { const h=(location.hash||"").slice(1); return ROUTES.includes(h)? h : "uebersicht"; };
 window.addEventListener("hashchange", ()=>{ render(); window.scrollTo(0,0); });
 document.addEventListener("change", e=>{
@@ -346,11 +352,11 @@ function render(){
   const r = route();
   const activeNav = FDB_GROUP.includes(r)? "fdb" : r;
   document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on", a.dataset.r===activeNav));
-  const cnt = {projekte:S.projekte.length, kunden:S.kunden.length, lieferanten:S.lieferanten.length, produkte:S.produkte.length, angebote:S.angebote.length, rechnungen:S.rechnungen.length};
+  const cnt = {projekte:S.projekte.length, kunden:S.kunden.length, lieferanten:S.lieferanten.length, produkte:S.produkte.length, angebote:S.angebote.length, rechnungen:S.rechnungen.length, stunden:S.stunden.length};
   for(const k in cnt){ const el=$("#c-"+k); if(el) el.textContent = cnt[k]||""; }
   const v=$("#view");
   const ae=document.activeElement; const keep = ae && ae.id && v.contains(ae) ? {id:ae.id, pos: (()=>{try{return ae.selectionStart}catch(e){return null}})()} : null;
-  const view = ({uebersicht:vUebersicht, projekte:vProjekte, proben:vProben, lieferanten:vLieferanten, analysen:vAnalysen, labore:vLabore, auswertung:vAuswertung, assistent:vAssistent, kunden:vKunden, produkte:vProdukte, angebote:vAngebote, rechnungen:vRechnungen, fdb:vFdb, onboarding:vOnboarding, postfach:vPostfach}[r])();
+  const view = ({uebersicht:vUebersicht, projekte:vProjekte, proben:vProben, lieferanten:vLieferanten, analysen:vAnalysen, labore:vLabore, auswertung:vAuswertung, assistent:vAssistent, kunden:vKunden, produkte:vProdukte, angebote:vAngebote, rechnungen:vRechnungen, stunden:vStunden, fdb:vFdb, onboarding:vOnboarding, postfach:vPostfach}[r])();
   v.innerHTML = banner() + (FDB_GROUP.includes(r)? fdbSubnav(r) : "") + view;
   if(keep){ const el=document.getElementById(keep.id); if(el){ el.focus(); if(keep.pos!=null) try{el.setSelectionRange(keep.pos,keep.pos)}catch(e){} } }
 }
@@ -1544,6 +1550,71 @@ function editFirma(){
 function fld(name,label,val,cls,req,type){ const ph = (typeof req==="string")? req : ""; return '<div class="f '+(cls||"")+'"><label for="i-'+name+'">'+label+'</label><input id="i-'+name+'" name="'+name+'" type="'+(type||"text")+'" value="'+esc(val==null?"":val)+'" '+(req===true?"required":"")+' placeholder="'+esc(ph)+'"></div>'; }
 function area(name,label,val,cls){ return '<div class="f '+(cls===undefined?"full":cls)+'"><label for="i-'+name+'">'+label+'</label><textarea id="i-'+name+'" name="'+name+'">'+esc(val||"")+'</textarea></div>'; }
 function sel(name,label,opts,val,blank){ return '<div class="f"><label for="i-'+name+'">'+label+'</label><select id="i-'+name+'" name="'+name+'">'+(blank?'<option value="">— wählen —</option>':'')+opts.map(o=>'<option '+(o===val?"selected":"")+'>'+esc(o)+'</option>').join("")+'</select></div>'; }
+// ---------- Ansicht: Stunden ----------
+function vStunden(){
+  const f=S.sFilter; let rows=S.stunden.slice();
+  const q=(f.q||"").toLowerCase();
+  if(q) rows=rows.filter(h=>{ const p=proj(h.projektId); return [p?p.nr:"", p?p.titel:"", p?p.kurz:"", h.taetigkeit, h.wer].join(" ").toLowerCase().includes(q); });
+  if(f.wer) rows=rows.filter(h=>h.wer===f.wer);
+  if(f.von) rows=rows.filter(h=>h.datum&&h.datum>=f.von);
+  if(f.bis) rows=rows.filter(h=>h.datum&&h.datum<=f.bis);
+  rows.sort((a,b)=> (b.datum||"").localeCompare(a.datum||"") || (b.when||"").localeCompare(a.when||""));
+  const totM=rows.reduce((s,h)=>s+(h.minuten||0),0);
+  const allM=S.stunden.reduce((s,h)=>s+(h.minuten||0),0);
+  let h='<div class="head"><div><h2>Stunden</h2><div class="lede">'+S.stunden.length+' Einträge · '+stHM(allM)+' gesamt erfasst</div></div>'
+    +(canW()?'<div class="actions"><button class="btn" data-act="newStunde">Stunden erfassen</button></div>':'')+'</div>';
+  h+='<div class="toolbar"><input id="sq" placeholder="Suche Projekt, Tätigkeit, Person …" value="'+esc(f.q)+'">'
+    +'<select id="swer" aria-label="Nach Person filtern"><option value="">Alle Personen</option>'+S.team.map(n=>'<option '+(f.wer===n?"selected":"")+'>'+esc(n)+'</option>').join("")+'</select>'
+    +'<input id="svon" type="date" value="'+esc(f.von)+'" aria-label="Von">'
+    +'<input id="sbis" type="date" value="'+esc(f.bis)+'" aria-label="Bis">'
+    +'</div>';
+  if(!rows.length){ h+='<div class="tw"><div class="empty"><b>'+(S.stunden.length?"Keine Treffer":"Noch keine Stunden")+'</b>'+(S.stunden.length?"Für die aktuellen Filter gibt es keine Einträge.":"Erfasse den ersten Eintrag über den Button oben rechts.")+'</div></div>'; return h; }
+  h+='<div class="tw"><table class="t"><thead><tr><th>Datum</th><th>Person</th><th>Projekt</th><th>Tätigkeit</th><th class="num">Dauer</th><th></th></tr></thead><tbody>';
+  rows.forEach(e=>{ const p=proj(e.projektId);
+    h+='<tr><td class="mono">'+fmtD(e.datum)+'</td><td>'+esc(e.wer||"–")+'</td>'
+      +'<td>'+(p?'<b>'+esc(p.nr)+'</b> <span class="sub" style="display:inline">'+esc(p.kurz||p.titel)+'</span>':'<span class="sub" style="display:inline">ohne Projekt</span>')+'</td>'
+      +'<td>'+esc(e.taetigkeit||"–")+(e.von&&e.bis?'<span class="sub">'+esc(e.von)+'–'+esc(e.bis)+'</span>':'')+'</td>'
+      +'<td class="num">'+stHM(e.minuten)+'</td>'
+      +'<td class="num">'+(canW()?'<button class="btn ghost sm" data-editstunde="'+esc(e.id)+'">bearbeiten</button>':'')+'</td></tr>';
+  });
+  h+='</tbody><tfoot><tr><td colspan="4" style="text-align:right;font-weight:600">Summe ('+rows.length+')</td><td class="num" style="font-weight:600">'+stHM(totM)+'</td><td></td></tr></tfoot></table></div>';
+  return h;
+}
+
+function editStunde(id){
+  const e = id? clone(byId(S.stunden,id)) : {datum:todayISO(), wer:(S.team[0]||""), projektId:"", taetigkeit:"", von:"", bis:"", minuten:0};
+  const h0=Math.floor((e.minuten||0)/60), m0=(e.minuten||0)%60;
+  const projOpts='<option value="">— ohne Projekt —</option>'+S.projekte.map(p=>'<option value="'+esc(p.id)+'" '+(e.projektId===p.id?"selected":"")+'>'+esc(p.nr+" · "+(p.kurz||p.titel))+'</option>').join("");
+  const werOpts=S.team.map(n=>'<option '+(e.wer===n?"selected":"")+'>'+esc(n)+'</option>').join("");
+  const tatSchnell=["Labor","Bericht","Orga","Besprechung","Fahrt"];
+  let h='<div class="mh"><h3>'+(id?"Eintrag bearbeiten":"Stunden erfassen")+'</h3><button class="xbtn" data-close aria-label="Schließen">×</button></div><form id="fStd" class="form">'
+   +'<div class="f"><label for="i-datum">Datum</label><input id="i-datum" name="datum" type="date" value="'+esc(e.datum||todayISO())+'"></div>'
+   +'<div class="f"><label for="i-wer">Person</label><select id="i-wer" name="wer">'+werOpts+'</select></div>'
+   +'<div class="f full"><label for="i-projektId">Projekt</label><select id="i-projektId" name="projektId">'+projOpts+'</select></div>'
+   +'<div class="f"><label>Uhrzeit von – bis</label><div style="display:flex;gap:8px;align-items:center"><input id="i-von" name="von" type="time" value="'+esc(e.von||"")+'" style="flex:1;min-width:0"><span class="sub">bis</span><input id="i-bis" name="bis" type="time" value="'+esc(e.bis||"")+'" style="flex:1;min-width:0"></div></div>'
+   +'<div class="f"><label>oder Dauer</label><div style="display:flex;gap:8px;align-items:center"><input id="i-h" type="number" min="0" value="'+(h0||"")+'" placeholder="h" style="width:72px"><span class="sub">h</span><input id="i-m" type="number" min="0" max="59" step="5" value="'+(m0||"")+'" placeholder="min" style="width:72px"><span class="sub">min</span><span class="pill p-s1" id="durBadge" style="margin-left:4px">'+stHM(e.minuten)+'</span></div></div>'
+   +'<div class="f full"><label for="i-taetigkeit">Tätigkeit</label><input id="i-taetigkeit" name="taetigkeit" value="'+esc(e.taetigkeit||"")+'" placeholder="z. B. Labor, Bericht, Orga"><div class="checks" style="margin-top:7px">'+tatSchnell.map(t=>'<label style="cursor:pointer" data-tat="'+esc(t)+'">'+esc(t)+'</label>').join("")+'</div><small>Ohne Projekt ist in Ordnung – dann bitte eine Tätigkeit eintragen.</small></div>'
+   +'</form><div class="mf">'+(id?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Löschen</button></span>':'')+'<button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="saveStd">'+(id?"Speichern":"Erfassen")+'</button></div>';
+  openModal(h);
+  const von=$("#i-von"),bis=$("#i-bis"),hh=$("#i-h"),mm=$("#i-m"),badge=$("#durBadge");
+  const curMin=()=>(parseInt(hh.value)||0)*60+(parseInt(mm.value)||0);
+  const showBadge=()=>{ badge.textContent=stHM(curMin()); };
+  const fromClock=()=>{ const d=stDur(von.value,bis.value); if(d!=null){ hh.value=Math.floor(d/60); mm.value=d%60; } showBadge(); };
+  von.addEventListener("input",fromClock); bis.addEventListener("input",fromClock);
+  hh.addEventListener("input",showBadge); mm.addEventListener("input",showBadge);
+  document.querySelectorAll("#modalRoot [data-tat]").forEach(el=>el.onclick=()=>{ $("#i-taetigkeit").value=el.dataset.tat; });
+  $("#saveStd").onclick=async()=>{
+    const f=formData("#fStd");
+    let min=curMin(); if(min<=0){ const d=stDur(von.value,bis.value); if(d!=null) min=d; }
+    if(min<=0){ toast("Bitte eine Zeit eingeben (von–bis oder Dauer)."); return; }
+    if(!f.projektId && !(f.taetigkeit||"").trim()){ toast("Bitte ein Projekt wählen oder eine Tätigkeit eintragen."); return; }
+    const data={ datum:f.datum||todayISO(), wer:f.wer||"", projektId:f.projektId||"", taetigkeit:(f.taetigkeit||"").trim(), von:von.value||"", bis:bis.value||"", minuten:min, when:e.when||new Date().toISOString(), who:e.who||S.meId||"" };
+    const docId = id || S.db.collection("stunden").doc().id;
+    await write("stunden", docId, data); closeModal(); toast(id?"Gespeichert":stHM(min)+" erfasst");
+  };
+  wireDelete(async()=>{ await remove("stunden",id); closeModal(); toast("Eintrag gelöscht"); });
+}
+
 function formData(sel){ const o={}; new FormData(document.querySelector(sel)).forEach((v,k)=>{ if(k!=="an") o[k]=String(v).trim(); }); return o; }
 
 let modalRerender = null;
@@ -1557,7 +1628,7 @@ render = function(){ _render(); if(modalRerender){ const m=$("#modalRoot"); cons
 
 // ---------- Ereignisse ----------
 document.addEventListener("click", async e=>{
-  const t = e.target.closest("[data-act],[data-lief],[data-editlief],[data-kunde],[data-editkunde],[data-produkt],[data-editprodukt],[data-probe],[data-projekt],[data-notiz],[data-kpi],[data-ana],[data-close],[data-editset],[data-editprojekt],[data-editana],[data-editlab],[data-addnote],[data-pfkunde],[data-pflief],[data-openbeleg],[data-editbeleg],[data-copybeleg],[data-belegpdf],[data-setstatus],[data-send],[data-firma],[data-newbeleg],#kiRun,#kiStop,#kiSave,#kiRegelnSave");
+  const t = e.target.closest("[data-act],[data-lief],[data-editlief],[data-kunde],[data-editkunde],[data-produkt],[data-editprodukt],[data-probe],[data-projekt],[data-notiz],[data-kpi],[data-ana],[data-close],[data-editset],[data-editprojekt],[data-editana],[data-editlab],[data-addnote],[data-pfkunde],[data-pflief],[data-openbeleg],[data-editbeleg],[data-copybeleg],[data-belegpdf],[data-setstatus],[data-send],[data-firma],[data-newbeleg],[data-editstunde],#kiRun,#kiStop,#kiSave,#kiRegelnSave");
   if(e.target.id==="mbg"){ closeModal(); return; }
   if(!t) return;
   if(t.hasAttribute("data-close")){ closeModal(); return; }
@@ -1573,6 +1644,8 @@ document.addEventListener("click", async e=>{
   if(t.dataset.pfkunde) return pfKundeAus(t.dataset.pfkunde);
   if(t.dataset.pflief) return pfLieferantAus(t.dataset.pflief);
   if(act==="newProdukt") return editProdukt(null);
+  if(act==="newStunde") return editStunde(null);
+  if(t.dataset.editstunde) return editStunde(t.dataset.editstunde);
   if(act==="newAngebot") return editBeleg("angebot", null, null);
   if(act==="newRechnung") return editBeleg("rechnung", null, null);
   if(t.hasAttribute("data-firma")) return editFirma();
@@ -1613,7 +1686,7 @@ document.addEventListener("click", async e=>{
   }
 });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && $("#modalRoot").innerHTML) closeModal(); if(e.key==="Enter" && e.target.matches && e.target.matches("tr.click,.chip[data-ana],a[data-lief]")) e.target.click(); if(e.key==="Enter" && e.target.id==="pfQ"){ e.preventDefault(); pfSearch(); } });
-document.addEventListener("input", e=>{ if(e.target.id==="fq"){ S.filter.q=e.target.value; render(); } if(e.target.id==="lq"){ S.filter.lq=e.target.value; render(); } if(e.target.id==="kq"){ S.kFilter.q=e.target.value; render(); } if(e.target.id==="pq"){ S.pFilter.q=e.target.value; render(); } if(e.target.id==="angq"){ S.angFilter.q=e.target.value; render(); } if(e.target.id==="rechq"){ S.rechFilter.q=e.target.value; render(); } if(e.target.id==="pfQ"){ PF.q=e.target.value; } });
+document.addEventListener("input", e=>{ if(e.target.id==="fq"){ S.filter.q=e.target.value; render(); } if(e.target.id==="lq"){ S.filter.lq=e.target.value; render(); } if(e.target.id==="kq"){ S.kFilter.q=e.target.value; render(); } if(e.target.id==="pq"){ S.pFilter.q=e.target.value; render(); } if(e.target.id==="angq"){ S.angFilter.q=e.target.value; render(); } if(e.target.id==="rechq"){ S.rechFilter.q=e.target.value; render(); } if(e.target.id==="sq"){ S.sFilter.q=e.target.value; render(); } if(e.target.id==="pfQ"){ PF.q=e.target.value; } });
 document.addEventListener("change", e=>{
   const id=e.target.id;
   if(id==="fprojekt"){ S.filter.projekt=e.target.value; render(); }
@@ -1623,6 +1696,9 @@ document.addEventListener("change", e=>{
   if(id==="kland"){ S.kFilter.land=e.target.value; render(); }
   if(id==="angstatus"){ S.angFilter.status=e.target.value; render(); }
   if(id==="rechstatus"){ S.rechFilter.status=e.target.value; render(); }
+  if(id==="swer"){ S.sFilter.wer=e.target.value; render(); }
+  if(id==="svon"){ S.sFilter.von=e.target.value; render(); }
+  if(id==="sbis"){ S.sFilter.bis=e.target.value; render(); }
   if(id==="aProjekt"){ S.aFilter.projekt=e.target.value; render(); }
   if(id==="aKat"){ S.aFilter.kategorie=e.target.value; render(); }
   if(id==="kiP"){ S.kiSel.projekt=e.target.value; S.kiSel.set=""; S.kiText=""; render(); }
