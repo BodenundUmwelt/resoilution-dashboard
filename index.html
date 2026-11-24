@@ -1365,7 +1365,7 @@ function showBeleg(typ,id){
     h+='</div></div>';
   }
   h+='<div class="mf">'
-    +(canW()?'<span class="left"><button class="btn danger sm" data-askdel>Löschen</button></span>':'')
+    +(canW()?'<span class="left" id="delWrap"><button class="btn danger sm" data-askdel>Löschen</button></span>':'')
     +'<button class="btn ghost" data-belegpdf="'+esc(id)+'" data-typ="'+typ+'">PDF / Drucken</button>'
     +(canW()?'<button class="btn ghost" data-copybeleg="'+esc(id)+'" data-typ="'+typ+'">'+(isA?"Kopieren":"Als Angebot/Kopie")+'</button>':'')
     +(canW()&&e&&e.email?'<button class="btn ghost" data-send="'+esc(id)+'" data-typ="'+typ+'">Versenden</button>':'')
